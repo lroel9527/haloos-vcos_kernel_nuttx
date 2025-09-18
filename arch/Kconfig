@@ -200,6 +200,7 @@ config ARCH_TRICORE
 	---help---
 		Infineon 32-bit AURIX TriCore architectures
 
+
 endchoice
 
 config ARCH
