@@ -175,7 +175,10 @@ noinstrument_function static inline_function void tricore_set_a9reg(uint32_t val
 static inline int up_cpu_index(void)
 {
 #ifdef CONFIG_ARCH_HAVE_MULTICPU
-  return __mfcr(TC3XX_CPU_CUS_ID);
+  int coreid = __mfcr(TC3XX_CPU_CORE_ID);
+  if (coreid == 6)
+    coreid = 5;
+  return coreid;
 #else
   return 0;
 #endif
