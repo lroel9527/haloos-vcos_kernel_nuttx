@@ -122,6 +122,8 @@
 /** \brief 0x00000100, CPU_PSW_GW */
 #define CPU_PSW_GW_MASK ( 0x00000100UL )    /* bit:8 */
 
+/* Tc3xx Core ID Reg */
+#define TC3XX_CPU_CORE_ID 0xFE1C
 /* Tc3xx Customer ID Reg */
 #define TC3XX_CPU_CUS_ID 0xFE50
 /* Tc3xx Program Status Word Reg */
