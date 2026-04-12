@@ -89,6 +89,13 @@ void verrx(int status, FAR const char *fmt, va_list ap) printf_like(2, 0);
  * if result is unused.
  */
 
+
+#ifndef unlikely
+#define __builtin_expect(expr, value)   (((expr) ? 1 : 0) == value)
+#define unlikely(x) (__builtin_expect(!!(x), 0))
+#endif
+
+
 #define IS_ERR_VALUE(x) unlikely((unsigned long)(void *)(x) >= (unsigned long)-__ELASTERROR)
 
 /**

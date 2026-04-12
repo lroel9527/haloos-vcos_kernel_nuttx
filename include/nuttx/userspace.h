@@ -83,7 +83,7 @@ struct mm_heap_s; /* Forward reference */
  * the blob.  The form of that header is provided by struct userspace_s. An
  * instance of this is expected to reside at CONFIG_NUTTX_USERSPACE.
  */
-
+#warning ----------userspace_s---------------
 struct userspace_s
 {
   /* General memory map */

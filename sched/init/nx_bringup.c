@@ -295,7 +295,7 @@ static inline void nx_romfsetc(void)
  *
  ****************************************************************************/
 
-static inline void nx_start_application(void)
+void nx_start_application(void)
 {
 #ifndef CONFIG_INIT_NONE
   FAR char * const argv[] =

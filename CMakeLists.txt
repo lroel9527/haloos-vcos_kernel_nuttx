@@ -32,7 +32,6 @@
 # ~~~
 
 # Request a version available on latest Ubuntu LTS (20.04)
-
 cmake_minimum_required(VERSION 3.16)
 
 # Handle newer CMake versions correctly by setting policies
@@ -132,12 +131,18 @@ else()
 
   list(GET CONFIG_ARRAY 0 NUTTX_BOARD)
   list(GET CONFIG_ARRAY 1 NUTTX_CONFIG)
-
+  message("vcos kernel nutxx*****************")
+  message("${NUTTX_CONFIG}")
+  message("vcos kernel nutxx*****************")
+  message("${NUTTX_BOARD_DIR}")
+  message("vcos kernel nutxx*****************")
   file(
     GLOB NUTTX_BOARD_DIR
     LIST_DIRECTORIES true
     "${NUTTX_DIR}/boards/*/*/${NUTTX_BOARD}")
-
+   message("vcos kernel nutxx*****************1111")
+   message("${NUTTX_BOARD_DIR}")
+   message("vcos kernel nutxx*****************1111")
   if(EXISTS ${NUTTX_BOARD_DIR}/configs/${NUTTX_CONFIG}/defconfig)
     set(NUTTX_DEFCONFIG ${NUTTX_BOARD_DIR}/configs/${NUTTX_CONFIG}/defconfig)
   endif()
@@ -394,7 +399,6 @@ if(CONFIG_ARCH_BOARD_COMMON)
 endif()
 
 # Setup toolchain ############################################################
-
 # This needs to happen before project() when binaries are searched for
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/arch/${CONFIG_ARCH}/src/cmake)
@@ -403,19 +407,15 @@ set(CMAKE_TOOLCHAIN_FILE
 
 # Define project #############################################################
 # This triggers configuration
-
 project(NuttX LANGUAGES C CXX ASM)
-
 # include common toolchain setting
 include(nuttx_toolchain)
 
 if(WIN32)
   enable_language(ASM_MASM)
 endif()
-
 # Setup platform options (this needs to happen after project(), once the
 # toolchain file has been processed)
-
 # Support custom Toolchain options by custom Boards
 if(CONFIG_ARCH_BOARD_CUSTOM)
   if(EXISTS ${NUTTX_BOARD_ABS_DIR}/cmake
@@ -428,7 +428,6 @@ endif()
 include(platform)
 
 # Setup main nuttx target ####################################################
-
 add_executable(nuttx)
 add_custom_target(nuttx_post)
 if(CONFIG_BUILD_PROTECTED)
@@ -528,11 +527,13 @@ endif()
 # deterministic. Debuggers usually have a path mapping feature to ensure the
 # files are still found.
 if(NOT MSVC)
-  if(CONFIG_OUTPUT_STRIP_PATHS AND NOT CONFIG_TRICORE_TOOLCHAIN_HIGHTEC)
-    add_compile_options(-fmacro-prefix-map=${NUTTX_DIR}=)
-    add_compile_options(-fmacro-prefix-map=${NUTTX_APPS_DIR}=)
-    add_compile_options(-fmacro-prefix-map=${NUTTX_BOARD_ABS_DIR}=)
-    add_compile_options(-fmacro-prefix-map=${NUTTX_CHIP_ABS_DIR}=)
+  if (NOT (CONFIG_ARCH_RH850 AND CONFIG_ARCH_TOOLCHAIN_GHS))
+    if(CONFIG_OUTPUT_STRIP_PATHS AND NOT CONFIG_TRICORE_TOOLCHAIN_HIGHTEC)
+      add_compile_options(-fmacro-prefix-map=${NUTTX_DIR}=)
+      add_compile_options(-fmacro-prefix-map=${NUTTX_APPS_DIR}=)
+      add_compile_options(-fmacro-prefix-map=${NUTTX_BOARD_ABS_DIR}=)
+      add_compile_options(-fmacro-prefix-map=${NUTTX_CHIP_ABS_DIR}=)
+    endif()
   endif()
 endif()
 
@@ -585,9 +586,7 @@ if(TARGET nuttx_post_build)
 endif()
 
 # Add apps/ to the build (if present)
-
 if(NOT CONFIG_BUILD_KERNEL)
-
   if(EXISTS ${NUTTX_APPS_DIR}/CMakeLists.txt)
     add_subdirectory(${NUTTX_APPS_DIR} apps)
   else()
@@ -606,14 +605,21 @@ get_property(ldscript GLOBAL PROPERTY LD_SCRIPT)
 if(NOT CONFIG_ARCH_SIM)
   get_filename_component(LD_SCRIPT_NAME ${ldscript} NAME)
   set(LD_SCRIPT_TMP "${CMAKE_BINARY_DIR}/${LD_SCRIPT_NAME}.tmp")
+  message("LD_SCRIPT_TMP: ${LD_SCRIPT_TMP}")
 
-  nuttx_generate_preproces_target(SOURCE_FILE ${ldscript} TARGET_FILE
-                                  ${LD_SCRIPT_TMP})
+  # Only for CCRH850 
+  if(CONFIG_ARCH_RH850)
+  else()
+      nuttx_generate_preproces_target(SOURCE_FILE ${ldscript} TARGET_FILE
+                                      ${LD_SCRIPT_TMP})
+      add_custom_target(ldscript_tmp DEPENDS ${LD_SCRIPT_TMP})
+      # todo fix linker not found in apps
+      add_dependencies(nuttx ldscript_tmp)
+      # todo end
 
-  add_custom_target(ldscript_tmp DEPENDS ${LD_SCRIPT_TMP})
-  add_dependencies(nuttx ldscript_tmp)
+      set(ldscript ${LD_SCRIPT_TMP})
+  endif()
 
-  set(ldscript ${LD_SCRIPT_TMP})
 endif()
 
 # Perform link
@@ -856,8 +862,6 @@ if(CONFIG_BUILD_PROTECTED)
 
   # TODO: could also merge elf binaries
 endif()
-
 if(CONFIG_BUILD_KERNEL)
   # TODO: generate nuttx-export-xxx.tar.gz for userland development
-
 endif()
