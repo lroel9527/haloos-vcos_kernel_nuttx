@@ -159,6 +159,7 @@ function(nuttx_add_kernel_library target)
       PRIVATE
         $<GENEX_EVAL:$<TARGET_PROPERTY:nuttx,NUTTX_KERNEL_INCLUDE_DIRECTORIES>>)
   endif()
+  
 
   if(NOT "${target}" STREQUAL "${kernel_target}")
     # The k${target} lib will have the same sources added to that ${target} lib.

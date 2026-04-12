@@ -64,10 +64,10 @@
 #  define NL0     (0 << 8)  /*   Newline character type 0 */
 #  define NL1     (1 << 8)  /*   Newline character type 1 */
 #define CRDLY     (3 << 9)  /* Bits 9-10: Select carriage-return delays: */
-#  define CR0     (0 << 9)  /*   Carriage-return delay type 0 */
-#  define CR1     (1 << 9)  /*   Carriage-return delay type 1 */
-#  define CR2     (2 << 9)  /*   Carriage-return delay type 2 */
-#  define CR3     (3 << 9)  /*   Carriage-return delay type 3 */
+#  define TER_CR0     (0 << 9)  /*   Carriage-return delay type 0 */
+#  define TER_CR1     (1 << 9)  /*   Carriage-return delay type 1 */
+#  define TER_CR2     (2 << 9)  /*   Carriage-return delay type 2 */
+#  define TER_CR3     (3 << 9)  /*   Carriage-return delay type 3 */
 #define TABDLY    (3 << 11) /* Bits 11-12: Select horizontal-tab delays: */
 #  define TAB0    (0 << 11) /*   Horizontal-tab delay type 0 */
 #  define TAB1    (1 << 11) /*   Horizontal-tab delay type 1 */

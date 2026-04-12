@@ -1,6 +1,6 @@
 # ##############################################################################
 # arch/CMakeLists.txt
-#
+# 
 # Licensed to the Apache Software Foundation (ASF) under one or more contributor
 # license agreements.  See the NOTICE file distributed with this work for
 # additional information regarding copyright ownership.  The ASF licenses this
@@ -36,4 +36,5 @@ endif()
 # EXTRALINKCMDS += @$(TOPDIR)/syscall/syscall_wraps.ldcmd endif
 
 # include corresponding arch subdirectory
+
 add_subdirectory(${CONFIG_ARCH})

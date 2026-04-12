@@ -330,7 +330,7 @@ int nxsig_clockwait(int clockid, int flags,
   dq_addlast((FAR dq_entry_t *)rtcb, &g_waitingforsignal);
 
   /* Now, perform the context switch if one is needed */
-
+  
   up_switch_context(this_task(), rtcb);
 
   /* We no longer need the watchdog */
