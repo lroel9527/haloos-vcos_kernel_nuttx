@@ -52,6 +52,10 @@ void exception_direct(void)
     {
       up_trigger_irq(NVIC_IRQ_PENDSV, 0);
     }
+
+#if defined(CONFIG_RT_FRAMEWORK ) && (CONFIG_RT_FRAMEWORK == 1)
+  up_set_contexthdl(g_running_tasks[this_cpu()]->contexthdl);
+#endif
 }
 
 uint32_t *arm_doirq(int irq, uint32_t *regs)
@@ -117,6 +121,10 @@ uint32_t *arm_doirq(int irq, uint32_t *regs)
   up_set_current_regs(NULL);
 
   board_autoled_off(LED_INIRQ);
+
+#if defined(CONFIG_RT_FRAMEWORK ) && (CONFIG_RT_FRAMEWORK == 1)
+    up_set_contexthdl(tcb->contexthdl);
+#endif
 
   return regs;
 }

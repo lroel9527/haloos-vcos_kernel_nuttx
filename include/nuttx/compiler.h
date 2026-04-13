@@ -1245,7 +1245,7 @@
 extern unsigned long g_cpu_data_size;
 
 #ifdef CONFIG_BMP
-#if defined(CONFIG_ARCH_TRICORE) || defined(CONFIG_ARCH_CHIP_E3650) || defined(CONFIG_ARCH_CHIP_J6E) || defined(CONFIG_ARCH_CHIP_SCHU_ISP)
+#if defined(CONFIG_ARCH_TRICORE) || defined(CONFIG_ARCH_CHIP_E3650) || defined(CONFIG_ARCH_CHIP_J6E) || defined(CONFIG_ARCH_CHIP_SCHU_ISP) || defined(CONFIG_ARCH_CHIP_FC7300F8MDT)
 #include "arch/chip/per_cpu_def.h"
 #else
 #define __percpu_data
