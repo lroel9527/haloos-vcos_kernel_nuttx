@@ -194,9 +194,8 @@ endfunction()
 set(NUTTX_FIND_TOOLCHAIN_LIB_DEFINED true)
 
 function(nuttx_find_toolchain_lib)
-  execute_process(
-    COMMAND bash -c "which ${CMAKE_C_COMPILER} | awk -F '/[^/]*$' '{print $1}'"
-    OUTPUT_VARIABLE GHS_ROOT_PATH)
+  find_program(COMPILER_EXE "${CMAKE_C_COMPILER}")
+  get_filename_component(GHS_ROOT_PATH "${COMPILER_EXE}" DIRECTORY)
   string(STRIP "${GHS_ROOT_PATH}" GHS_ROOT_PATH)
   if(NOT ARGN)
     nuttx_add_extra_library(${GHS_ROOT_PATH}/lib/rh850_compat/libarch.a)
