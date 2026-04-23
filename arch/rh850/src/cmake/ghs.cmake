@@ -70,6 +70,7 @@ set(GHS_COMMON_FLAGS
   -sda=0
   -reserve_r2
   -large_sda
+  -single_tda
   --no_commons
   -shorten_loads
   -shorten_moves
