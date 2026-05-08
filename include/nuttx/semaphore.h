@@ -55,9 +55,15 @@
 #else /* CONFIG_PRIORITY_INHERITANCE */
 /* semcount, flags, waitlist */
 
+#if defined(CONFIG_RT_FRAMEWORK) && (CONFIG_RT_FRAMEWORK == 1)
+#  define NXSEM_INITIALIZER(c, f) \
+     {(c), (f), SEM_WAITLIST_INITIALIZER, SEM_VALUE_MAX}
+#else
 #  define NXSEM_INITIALIZER(c, f) \
      {(c), (f), SEM_WAITLIST_INITIALIZER}
+#endif
 #endif /* CONFIG_PRIORITY_INHERITANCE */
+
 
 /****************************************************************************
  * Public Type Definitions

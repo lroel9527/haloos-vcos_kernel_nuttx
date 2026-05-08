@@ -142,7 +142,12 @@ ssize_t syslog_write_foreach(FAR const char *buffer,
                   ret = write(channel, buffer + nwritten, head - nwritten);
                   if (ret >= 0)
                     {
+                      #ifndef CONFIG_RH850_TOOLCHAIN_GHS
                       ret = write(channel, "\r\n", 2);
+                      #else
+                      char crlf[2] = {'\r', '\n'};
+                      ret = write(channel, crlf, 2);
+                      #endif
                     }
 
                   if (ret < 0)

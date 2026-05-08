@@ -51,6 +51,6 @@ typedef struct setjmp_buf_s jmp_buf[1];
  ****************************************************************************/
 
 int setjmp(jmp_buf env);
-void longjmp(jmp_buf env, int val) noreturn_function;
+void longjmp(jmp_buf env, int val);
 
 #endif /* __ARCH_RENESAS_INCLUDE_SETJUMP_H */
