@@ -2,6 +2,7 @@
 #include "r_ioport_api.h"
 #include "r_ioport.h"
 
+
 const ioport_extend_cfg_t g_ioport_cfg_extend =
     {
         .nf_cfg =
