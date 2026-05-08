@@ -1,0 +1,565 @@
+/* {REA_DISCLAIMER_PLACEHOLDER} */
+
+-- //! [RH850-PE0-StartUp]
+
+------------------------------------------------------------------------------------------------------------------------
+--  Includes   <System Includes> , "Project Includes"
+------------------------------------------------------------------------------------------------------------------------
+    #include "memory_regions.h"
+
+------------------------------------------------------------------------------------------------------------------------
+--  Macro definitions (Define MACRO as 0 if it is not already)
+------------------------------------------------------------------------------------------------------------------------
+    /* Local RAM self */
+
+    /* Cluster RAM */
+#if !defined(CLUSTER_RAM_0_LENGTH)
+    CLUSTER_RAM_0_LENGTH                .set 0
+#endif
+
+    BSP_WARM_START_RESET                .set 0
+    BSP_WARM_START_POST_CLOCK           .set 1
+    BSP_WARM_START_POST_C               .set 2
+    MEV_ADDR                            .set MEV_ADDRESS_START
+
+------------------------------------------------------------------------------------------------------------------------
+-------------- Public function delaration
+------------------------------------------------------------------------------------------------------------------------
+    .public  _R_BSP_SpinLockRelease
+    .public  _R_BSP_SpinlockGet
+    .public __Ram_Init
+    .public __clear_bss
+    .public __cstart
+    .extern nx_start
+
+    .extern _DummyIsr
+
+------------------------------------------------------------------------------------------------------------------------
+-- Used for sync between other core
+------------------------------------------------------------------------------------------------------------------------
+.section  .text
+.align  2
+_R_BSP_SpinLockRelease:
+    /* .mev_address section in cRAM_0 is used for Sync flags */
+    mov     r6, r20
+    st.w    r0, 0[r20]
+    jmp     [lp]
+
+------------------------------------------------------------------------------------------------------------------------
+-- Sync PE0 Routine
+------------------------------------------------------------------------------------------------------------------------
+.section  .text
+.align  2
+_R_BSP_SpinlockGet:
+    mov     r6, r20
+.R_BSP_SpinlockGet.Lock:
+    ldl.w   [r20], r21
+    cmp     r0, r21
+    bnz     .R_BSP_SpinlockGet.Lock_wait
+    mov     1, r21
+    stc.w   r21, [r20]
+    cmp     r0, r21
+    bnz     .R_BSP_SpinlockGet.Lock_success
+.R_BSP_SpinlockGet.Lock_wait:
+    snooze
+    br      .R_BSP_SpinlockGet.Lock
+.R_BSP_SpinlockGet.Lock_success:
+    jmp     [lp]
+
+------------------------------------------------------------------------------------------------------------------------
+--  startup
+------------------------------------------------------------------------------------------------------------------------
+
+.section  .text
+.align  2
+__cstart:
+
+#if (BSP_PE0_USED == 1)
+    /* Initialization for RAM */
+    jarl __Ram_Init, lp
+
+    /* Copy initialized RAM data from ROM to RAM */
+    /* Local RAM 0 */
+    mov  ___ghsbegin_pe0_data, r6
+    mov  ___ghsend_pe0_data, r7
+    mov  ___ghsbegin_ROM_pe0_data, r8
+    jarl  __copy_data, lp
+    
+    /* Copy initialized RAM data from ROM to RAM */
+    mov  ___ghsbegin_pe0_data, r6
+    mov  ___ghsend_pe0_data, r7
+    mov  ___ghsbegin_ROM_pe0_data, r8
+    jarl  __copy_data, lp
+    
+    /* Copy initialized RAM_UNSPECIFIED data from ROM to RAM */
+    mov  ___ghsbegin_RAM_UNSPECIFIED, r6
+    mov  ___ghsend_RAM_UNSPECIFIED, r7
+    mov  ___ghsbegin_ROM_RAM_UNSPECIFIED, r8
+    jarl  __copy_data, lp
+
+    /* Copy initialized RAM_INIT_PTR  data from ROM to RAM */
+    mov  ___ghsbegin_RAM_INIT_PTR, r6
+    mov  ___ghsend_RAM_INIT_PTR, r7
+    mov  ___ghsbegin_ROM_RAM_INIT_PTR, r8
+    jarl  __copy_data, lp
+    
+    /* Copy initialized RZCU_SEC_INIT_DATA_DDS  data from ROM to RAM */
+    mov  ___ghsbegin_RZCU_SEC_INIT_DATA_DDS, r6
+    mov  ___ghsend_RZCU_SEC_INIT_DATA_DDS, r7
+    mov  ___ghsbegin_ROM_RZCU_SEC_INIT_DATA_DDS, r8
+    jarl  __copy_data, lp
+
+    /* Copy initialized RZCU_SEC_DATA_DDS  data from ROM to RAM */
+    mov  ___ghsbegin_RZCU_SEC_DATA_DDS, r6
+    mov  ___ghsend_RZCU_SEC_DATA_DDS, r7
+    mov  ___ghsbegin_ROM_RZCU_SEC_DATA_DDS, r8
+    jarl  __copy_data, lp
+
+    /* Copy initialized ROM.data.private.systemapplication_core0.bsw   data from ROM to RAM */
+    mov  ___ghsbegin_data_private_systemapplication_core0_bsw , r6
+    mov  ___ghsend_data_private_systemapplication_core0_bsw, r7
+    mov  ___ghsbegin_ROM_data_private_systemapplication_core0_bsw, r8
+    jarl  __copy_data, lp
+
+    /* Copy initialized ETH_PORT_RAM_0 data from ROM to RAM */
+    mov  ___ghsbegin_ETH_PORT_RAM_0 , r6
+    mov  ___ghsend_ETH_PORT_RAM_0, r7
+    mov  ___ghsbegin_ROM_ETH_PORT_RAM_0, r8
+    jarl  __copy_data, lp
+
+    /* Copy initialized ETH_PORT_RAM_1   data from ROM to RAM */
+    mov  ___ghsbegin_ETH_PORT_RAM_1 , r6
+    mov  ___ghsend_ETH_PORT_RAM_1, r7
+    mov  ___ghsbegin_ROM_ETH_PORT_RAM_1, r8
+    jarl  __copy_data, lp
+    
+    /* Copy initialized ETH_PORT_RAM_2   data from ROM to RAM */
+    mov  ___ghsbegin_ETH_PORT_RAM_2 , r6
+    mov  ___ghsend_ETH_PORT_RAM_2, r7
+    mov  ___ghsbegin_ROM_ETH_PORT_RAM_2, r8
+    jarl  __copy_data, lp
+
+    /* Copy initialized RAM_1BIT data from ROM to RAM */
+    mov  ___ghsbegin_RAM_1BIT , r6
+    mov  ___ghsend_RAM_1BIT, r7
+    mov  ___ghsbegin_ROM_RAM_1BIT, r8
+    jarl  __copy_data, lp
+
+    /* Copy initialized RAM_8BIT data from ROM to RAM */
+    mov  ___ghsbegin_RAM_8BIT , r6
+    mov  ___ghsend_RAM_8BIT, r7
+    mov  ___ghsbegin_ROM_RAM_8BIT, r8
+    jarl  __copy_data, lp
+
+    /* Copy initialized RAM_16BIT data from ROM to RAM */
+    mov  ___ghsbegin_RAM_16BIT , r6
+    mov  ___ghsend_RAM_16BIT, r7
+    mov  ___ghsbegin_ROM_RAM_16BIT, r8
+    jarl  __copy_data, lp
+    
+    /* Copy initialized RAM_32BIT data from ROM to RAM */
+    mov  ___ghsbegin_RAM_32BIT , r6
+    mov  ___ghsend_RAM_32BIT, r7
+    mov  ___ghsbegin_ROM_RAM_32BIT, r8
+    jarl  __copy_data, lp
+
+    /* Copy initialized FAST_RAM_1BIT data from ROM to RAM */
+    mov  ___ghsbegin_FAST_RAM_1BIT , r6
+    mov  ___ghsend_FAST_RAM_1BIT, r7
+    mov  ___ghsbegin_ROM_FAST_RAM_1BIT, r8
+    jarl  __copy_data, lp
+
+    /* Copy initialized FAST_RAM_8BIT data from ROM to RAM */
+    mov  ___ghsbegin_FAST_RAM_8BIT , r6
+    mov  ___ghsend_FAST_RAM_8BIT, r7
+    mov  ___ghsbegin_ROM_FAST_RAM_8BIT, r8
+    jarl  __copy_data, lp
+
+    /* Copy initialized FAST_RAM_16BIT data from ROM to RAM */
+    mov  ___ghsbegin_FAST_RAM_16BIT , r6
+    mov  ___ghsend_FAST_RAM_16BIT, r7
+    mov  ___ghsbegin_ROM_FAST_RAM_16BIT, r8
+    jarl  __copy_data, lp
+
+    /* Copy initialized FAST_RAM_32BIT data from ROM to RAM */
+    mov  ___ghsbegin_FAST_RAM_32BIT , r6
+    mov  ___ghsend_FAST_RAM_32BIT, r7
+    mov  ___ghsbegin_ROM_FAST_RAM_32BIT, r8
+    jarl  __copy_data, lp
+
+    /* Copy initialized FAST_RAM_UNSPECIFIED data from ROM to RAM */
+    mov  ___ghsbegin_FAST_RAM_UNSPECIFIED , r6
+    mov  ___ghsend_FAST_RAM_UNSPECIFIED, r7
+    mov  ___ghsbegin_ROM_FAST_RAM_UNSPECIFIED, r8
+    jarl  __copy_data, lp
+
+    /* Copy initialized FAST_RAM_INIT_PTR data from ROM to RAM */
+    mov  ___ghsbegin_FAST_RAM_INIT_PTR , r6
+    mov  ___ghsend_FAST_RAM_INIT_PTR, r7
+    mov  ___ghsbegin_ROM_FAST_RAM_INIT_PTR, r8
+    jarl  __copy_data, lp
+
+    /* Copy initialized zdata data from ROM to RAM */
+    mov  ___ghsbegin_zdata , r6
+    mov  ___ghsend_zdata, r7
+    mov  ___ghsbegin_ROM_zdata, r8
+    jarl  __copy_data, lp
+
+    /* Copy initialized zdata data from ROM to RAM */
+    mov  ___ghsbegin_tdata , r6
+    mov  ___ghsend_tdata, r7
+    mov  ___ghsbegin_ROM_tdata, r8
+    jarl  __copy_data, lp
+
+    /* Copy initialized zdata data from ROM to RAM */
+    mov  ___ghsbegin_sldata , r6
+    mov  ___ghsend_sldata, r7
+    mov  ___ghsbegin_ROM_sldata, r8
+    jarl  __copy_data, lp
+
+    /* Copy initialized zdata data from ROM to RAM */
+    mov  ___ghsbeginClearFarData_Align4_DDSMemory1 , r6
+    mov  ___ghsendClearFarData_Align4_DDSMemory1, r7
+    mov  ___ghsbegin_ROM_ClearFarData_Align4_DDSMemory1, r8
+    jarl  __copy_data, lp
+
+    /* Copy initialized ClearFarData_Align4_DDSMemory2 data from ROM to RAM */
+    mov  ___ghsbeginClearFarData_Align4_DDSMemory2 , r6
+    mov  ___ghsendClearFarData_Align4_DDSMemory2, r7
+    mov  ___ghsbegin_ROM_ClearFarData_Align4_DDSMemory2, r8
+    jarl  __copy_data, lp
+
+
+    /* Zero out BSS for PE0 */
+    mov  ___ghsbegin_pe0_bss, r6
+    mov  ___ghsend_pe0_bss, r7
+    jarl  __clear_bss, lp
+
+
+    mov  ___ghsend_stack_pe0, sp                --  set sp register
+    /* Initialization of the gp, ep, tp pointer */
+    mov  __gp, gp                               --  set gp register
+    mov  __ep, ep                               --  set ep register
+    mov  __tp, tp                               --  set tp register
+
+    /* Initialization of the interrupt base pointer */
+    mov   _IntVectors_PE0, r6
+    ldsr  r6, 4, 1                              -- set INTBP
+
+    /* Compute RINT and DV bits */
+
+    /* Extend Priority Interrupt */
+
+    /* then set 1 to PSW.EBV -> RBASE!=EBASE
+       then set 1 to PSW.CU0 and CU1 */
+    stsr  5, r10, 0                             -- PSW
+    mov   0x8000, r11                           -- CUx_EBV
+    or    r11, r10
+    ldsr  r10, 5, 0 -- PSW
+    synci
+
+    /* Perform MCU initialization */
+    jarl _SystemInit, lp
+
+    /* Release lock for other cores */
+    mov   MEV_ADDR, r6
+    jarl  _R_BSP_SpinLockRelease, lp
+
+    /* set various flags to PSW via FEPSW */
+    stsr  5, r10, 0                             -- r10 <- PSW
+    ldsr  r10, 3, 0                             -- FEPSW <- r10
+    mov  _exit, lp                              -- lp <- #_exit
+    mov _nx_start, r10
+    ldsr  r10, 2, 0                             -- FEPC <- #_nx_start, Then start NuttX
+
+    /* apply PSW and PC to start user mode */
+    feret
+
+_exit:
+    br  _exit                                   --  end of program
+#endif
+
+------------------------------------------------------------------------------------------------------------------------
+--  FPU initialization
+------------------------------------------------------------------------------------------------------------------------
+    .public _R_BSP_FPU_Init
+    .align 2
+_R_BSP_FPU_Init:
+    mov  lp, r12                                -- save return address
+    mov  lp, r12                                -- save return address
+    /* Enable FPU */
+    stsr  6, r10, 1                             -- r10 <- PID
+    shl  21, r10
+    shr  30, r10
+    bz  .L1                                     -- detecting FPU
+    stsr  5, r10, 0                             -- r10 <- PSW
+    movhi  0x0001, r0, r11
+    or  r11, r10
+    ldsr  r10, 5, 0                             -- enable FPU
+    synci
+
+    movhi  0x0002, r0, r11
+    ldsr  r11, 6, 0                             -- initialize FPSR
+    ldsr  r0, 7, 0                              -- initialize FPEPC
+.L1:
+    mov  r12, lp
+    jmp  [lp]
+
+------------------------------------------------------------------------------------------------------------------------
+--  FXU initialization
+------------------------------------------------------------------------------------------------------------------------
+    .public _R_BSP_FXU_Init
+    .align 2
+_R_BSP_FXU_Init:
+    mov  lp, r12                                -- save return address
+    stsr  6, r10, 1                             -- r10 <- PID
+    shl  20, r10
+    shr  31, r10
+    bz  .L2                                     -- detecting FXU
+    stsr  5, r10, 0                             -- r10 <- PSW
+    movhi  0x0002, r0, r11
+    or  r11, r10
+    ldsr  r10, 5, 0                             -- enable FXU
+    synci
+
+    movhi  0x0002, r0, r11
+    ldsr  r11, 6, 10                            -- initialize FXSR
+    ldsr  r0, 8, 10                             -- initialize FXST
+    ldsr  r0, 10, 10                            -- initialize FXCFG
+.L2:
+    mov  r12, lp
+    mov  r12, lp
+    jmp  [lp]
+
+-- //! [RH850-Interrupt-Vector-Relocation]
+------------------------------------------------------------------------------------------------------------------------
+--  Start Section for exception table (PE0)
+------------------------------------------------------------------------------------------------------------------------
+#if (BSP_PE0_USED == 1)
+.section ex_entry_PE0
+.global _ex_entry_PE0
+.align 4
+
+_ex_entry_PE0:
+-----RESET
+    .offset 0x0000
+    jr _DummyIsr
+
+-----SYSERR
+    .offset 0x0010
+    jr _DummyIsr
+
+-----FETRAP
+    .offset 0x0030
+    jr _DummyIsr
+
+-----TRAP0
+    .offset 0x0040
+    jr _TRAP0_Handler
+
+-----TRAP1
+    .offset 0x0050
+    jr _DummyIsr
+
+-----RIEX
+    .offset 0x0060
+    jr _DummyIsr
+
+-----UCPOP
+    .offset 0x0080
+    jr _DummyIsr
+
+-----MIP_MDP
+    .offset 0x0090
+    jr _DummyIsr
+
+-----PIE
+    .offset 0x00a0
+    jr _DummyIsr
+
+-----MAE_MAEX
+    .offset 0x00c0
+    jr _DummyIsr
+
+-----FENMI
+    .offset 0x00e0
+    jr _DummyIsr
+
+-----FEINT
+    .offset 0x00f0
+    jr _DummyIsr
+
+-----EIINTn priority_0
+    .offset 0x0100
+    jr _DummyIsr
+
+    /* Condition: Table reference method OFF and interrupt reduction OFF */
+-----EIINTn priority_1
+    .offset 0x0110
+    jr _DummyIsr
+
+-----EIINTn priority_2
+    .offset 0x0120
+    jr _DummyIsr
+
+-----EIINTn priority_3
+    .offset 0x0130
+    jr _DummyIsr
+
+-----EIINTn priority_4
+    .offset 0x0140
+    jr _DummyIsr
+
+-----EIINTn priority_5
+    .offset 0x0150
+    jr _DummyIsr
+
+-----EIINTn priority_6
+    .offset 0x0160
+    jr _DummyIsr
+
+-----EIINTn priority_7
+    .offset 0x0170
+    jr _DummyIsr
+
+-----EIINTn priority_8
+    .offset 0x0180
+    jr _DummyIsr
+
+-----EIINTn priority_9
+    .offset 0x0190
+    jr _DummyIsr
+
+-----EIINTn priority_10
+    .offset 0x01a0
+    jr _DummyIsr
+
+-----EIINTn priority_11
+    .offset 0x01b0
+    jr _DummyIsr
+
+-----EIINTn priority_12
+    .offset 0x01c0
+    jr _DummyIsr
+
+-----EIINTn priority_13
+    .offset 0x01d0
+    jr _DummyIsr
+
+-----EIINTn priority_14
+    .offset 0x01e0
+    jr _DummyIsr
+
+-----EIINTn priority_15
+    .offset 0x01f0
+    jr _DummyIsr
+
+#endif
+-- //! [RH850-Interrupt-Vector-Relocation]
+---------------------------------------------- End of exception table ------------------------------------------------#
+
+.section .text
+.align  2
+-----------------------------------------------------------------------------------------------------------------------
+--  RAM initialization
+-----------------------------------------------------------------------------------------------------------------------
+
+__Ram_Init:
+    mov  lp, r14                                  -- save return address
+
+    /* Default section of GHS */
+    mov   ___ghsbegin_data, r6
+    mov   ___ghsend_data, r7
+    mov   ___ghsbegin_ROM_data, r8
+    jarl  __copy_data, lp
+
+    mov   ___ghsbegin_sdata, r6
+    mov   ___ghsend_sdata, r7
+    mov   ___ghsbegin_ROM_sdata, r8
+    jarl  __copy_data, lp
+
+    mov   ___ghsbegin_zdata, r6
+    mov   ___ghsend_zdata, r7
+    mov   ___ghsbegin_ROM_zdata, r8
+    jarl  __copy_data, lp
+
+    mov   ___ghsbegin_tdata, r6
+    mov   ___ghsend_tdata, r7
+    mov   ___ghsbegin_ROM_tdata, r8
+    jarl  __copy_data, lp
+
+    mov   ___ghsbegin_sldata, r6
+    mov   ___ghsend_sldata, r7
+    mov   ___ghsbegin_ROM_sldata, r8
+    jarl  __copy_data, lp
+
+    /* Zero out BSS */
+    mov   ___ghsbegin_bss, r6
+    mov   ___ghsend_bss, r7
+    jarl  __clear_bss, lp
+
+    mov   ___ghsbegin_zbss, r6
+    mov   ___ghsend_zbss, r7
+    jarl  __clear_bss, lp
+
+    mov   ___ghsbegin_slbss, r6
+    mov   ___ghsend_slbss, r7
+    jarl  __clear_bss, lp
+
+    mov   ___ghsbegin_sbss, r6
+    mov   ___ghsend_sbss, r7
+    jarl  __clear_bss, lp
+
+    /* Copy initialized RAM data from ROM to RAM */
+
+#if (CLUSTER_RAM_0_LENGTH != 0)
+    /* Cluster RAM 0 */
+    mov  ___ghsbegin_cluster_ram0_data, r6
+    mov  ___ghsend_cluster_ram0_data, r7
+    mov  ___ghsbegin_ROM_cluster_ram0_data, r8
+    jarl  __copy_data, lp
+#endif
+
+    /* Zero out BSS */
+
+#if (CLUSTER_RAM_0_LENGTH != 0)
+    /* Cluster RAM 0 */
+    mov  ___ghsbegin_cluster_ram0_bss, r6
+    mov  ___ghsend_cluster_ram0_bss, r7
+    jarl  __clear_bss, lp
+#endif
+
+    mov  r14, lp
+    jmp [lp]
+-----------------------------------------------------------------------------------------------------------------------
+--  Copy initialized RAM data from ROM to RAM
+-----------------------------------------------------------------------------------------------------------------------
+__copy_data:
+    br      .L.copy_data_section.2
+.L.copy_data_section.1:
+    ld.bu   0[r8], r10
+    st.b    r10, 0[r6]
+    add     1, r6
+    add     1, r8
+.L.copy_data_section.2:
+    cmp     r6, r7
+    bh      .L.copy_data_section.1
+    jmp     [lp]
+
+-----------------------------------------------------------------------------------------------------------------------
+--  Zero out BSS
+-----------------------------------------------------------------------------------------------------------------------
+__clear_bss:
+    mov     r0, r8
+    br      .L.clear_bss_section.2
+.L.clear_bss_section.1:
+    st.b    r8, 0[r6]
+    add     1, r6
+.L.clear_bss_section.2:
+    cmp     r6, r7
+    bh      .L.clear_bss_section.1
+    jmp     [lp]
+
+--------------------------------------------- end of start up module ---------------------------------------------------
+
+-- //! [RH850-PE0-StartUp]

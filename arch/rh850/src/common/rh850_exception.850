@@ -1,0 +1,175 @@
+.extern rh850_doirq
+.extern _up_current_regs
+.extern _uxInterruptStack
+
+.global _Irq_Handler
+.global _TRAP0_Handler
+.global _rh850_fullcontextrestore
+.global _up_saveusercontext
+
+--------------------------------------------------------------------------------
+-- Macro definitions.
+--------------------------------------------------------------------------------
+.set EIPC,      0
+.set EIPSW,     1
+.set PSW,       5
+.set FPSR,      6
+.set FPEPC,     7
+.set FXSR,      6
+.set FXXP,      13
+.set EIIC,      13
+.set CTPC,      16
+.set CTPSW,     17
+.set EIIC_MSK,  0x00000FFF
+.set FPU_MSK,   0x00010000
+.set FXU_MSK,   0x00020000
+
+
+--------------------------------------------------------------------------------
+-- Restore used registers.
+--------------------------------------------------------------------------------
+.macro RESTORE_REGISTER
+    popsp   r18-r19
+    ldsr    r19, FPEPC
+    ldsr    r18, FPSR
+
+    popsp   r13-r19
+    ldsr    r13, CTPC
+    ldsr    r14, CTPSW
+    mov     r15, ep
+    mov     r16, lp
+    ldsr    r17, EIIC
+    ldsr    r18, EIPC
+    ldsr    r19, EIPSW
+
+    popsp   r1-r2
+    popsp   r6-r19
+.endm
+
+--------------------------------------------------------------------------------
+-- Save used registers.
+--------------------------------------------------------------------------------
+.macro SAVE_REGISTER
+    pushsp  r6-r19
+    pushsp  r1-r2
+
+    stsr    EIPSW, r19
+    stsr    EIPC, r18
+    stsr    EIIC, r17
+    mov     lp, r16
+    mov     ep, r15
+    stsr    CTPSW, r14
+    stsr    CTPC, r13
+    pushsp  r13-r19
+
+    stsr    FPSR, r18
+    stsr    FPEPC, r19
+    pushsp  r18-r19
+.endm
+
+--------------------------------------------------------------------------------
+-- Save used context.
+--------------------------------------------------------------------------------
+.macro RESTORE_CONTEXT
+    -- Restore FPU registers if FPU is enabled
+    popsp   r18-r19
+    ldsr    r19, FPEPC
+    ldsr    r18, FPSR
+
+    --Restore general-purpose registers and EIPSW, EIPC, EIIC, CTPSW, CTPC
+    popsp   r14-r19
+    ldsr    r19, CTPC
+    ldsr    r18, CTPSW
+    ldsr    r17, EIIC
+    ldsr    r16, EIPC
+    ldsr    r15, EIPSW
+    mov     r14, lp
+
+    popsp   r1-r2
+    popsp   r6-r30
+
+.endm
+
+--------------------------------------------------------------------------------
+-- Save used context.
+--------------------------------------------------------------------------------
+.macro SAVE_CONTEXT
+    pushsp  r6-r30
+    pushsp  r1-r2
+    
+    mov     lp, r14
+    stsr    EIPSW, r15
+    stsr    EIPC, r16
+    stsr    EIIC, r17
+    stsr    CTPSW, r18
+    stsr    CTPC, r19
+    pushsp  r14-r19
+
+    stsr    FPSR, r18
+    stsr    FPEPC, r19
+    pushsp  r18-r19
+.endm
+
+--------------------------------------------------------------------------------
+-- Irq_Hanlder to process sw interrupt mapping 
+--------------------------------------------------------------------------------
+_Irq_Handler:
+    SAVE_REGISTER
+
+    jarl _up_regs, lp
+    mov r10, r7
+    pushsp r7
+
+    -- Call the interrupt handler.
+    stsr    EIIC, r6
+    andi    EIIC_MSK, r6, r6 /* Interrupt Number */
+    
+    /* uint32_t *rh850_doirq(int irq, uint32_t *regs) */
+    /* Invoke irq = r6 and regs = r7 */
+    jarl   _rh850_doirq, lp
+
+    popsp r7    -- Old regs
+
+    cmp r7, r10  -- If old regs != current regs
+                 -- then it needs to be switched new context
+    bne _RH850_InterruptDrivenSwitchContext
+
+_RH850_InterruptDrivenNotSwitchContext:
+    RESTORE_REGISTER  -- <-- Stack Pointer already popped enough
+    eiret
+
+_RH850_InterruptDrivenSwitchContext:
+    RESTORE_REGISTER -- <-- Stack Pointer already popped enough
+    SAVE_CONTEXT     -- Save old regs, to switch next context
+    mov sp, r6
+
+    jarl _rh850_switch_context, lp       -- To get this_task for switch context
+    mov r10, sp 
+    RESTORE_CONTEXT
+
+    eiret
+    
+
+--------------------------------------------------------------------------------
+-- PortYield handler. This is installed as the TRAP exception handler.
+--------------------------------------------------------------------------------
+_TRAP0_Handler:
+    SAVE_CONTEXT
+    mov sp, r6
+    jarl _rh850_switch_context, lp    -- To get this_task for switch context
+    mov r10, sp                       -- Return new stack pointer for new context
+    RESTORE_CONTEXT
+    eiret
+
+_rh850_fullcontextrestore:
+    jmp [lp]
+
+_up_saveusercontext:
+    SAVE_CONTEXT
+    -- Backup save stackpoint
+    mov sp, r10                        -- Return new stack pointer for new context
+
+    --- Need to  backup new stack pointer for rtcb->xcp.regs
+    jmp [lp]
+
+

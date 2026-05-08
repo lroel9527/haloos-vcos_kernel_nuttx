@@ -61,7 +61,7 @@
  ****************************************************************************/
 
 #if CONFIG_RR_INTERVAL > 0 || defined(CONFIG_SCHED_SPORADIC)
-static inline void nxsched_cpu_scheduler(int cpu)
+static void nxsched_cpu_scheduler(int cpu)
 {
   FAR struct tcb_s *rtcb = current_task(cpu);
 
@@ -109,7 +109,7 @@ static inline void nxsched_cpu_scheduler(int cpu)
  ****************************************************************************/
 
 #if CONFIG_RR_INTERVAL > 0 || defined(CONFIG_SCHED_SPORADIC)
-static inline void nxsched_process_scheduler(void)
+static void nxsched_process_scheduler(void)
 {
   irqstate_t flags;
   int i;
