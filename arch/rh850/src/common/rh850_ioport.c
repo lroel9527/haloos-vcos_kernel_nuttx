@@ -2,6 +2,7 @@
 #include "r_ioport_api.h"
 #include "r_ioport.h"
 
+
 const ioport_extend_cfg_t g_ioport_cfg_extend =
     {
         .nf_cfg =
@@ -1953,12 +1954,17 @@ const ioport_pin_cfg_t g_bsp_pin_cfg_data[] =
             .pin_cfg = ((uint32_t)IOPORT_CFG_PORT_DIRECTION_OUTPUT | (uint32_t)IOPORT_CFG_PORT_OUTPUT_LOW),
         },
         {
-            .pin = BSP_IO_PORT_P01_PIN_13, // RLIN30TX
-            .pin_cfg = ((uint32_t)IOPORT_ALT_OUT8 | (uint32_t)IOPORT_CFG_DRIVE_MEDIUM | (uint32_t)IOPORT_CFG_PERIPHERAL_PIN),
+            //.pin = BSP_IO_PORT_P01_PIN_13, // RLIN30TX
+            //.pin_cfg = ((uint32_t)IOPORT_ALT_OUT8 | (uint32_t)IOPORT_CFG_DRIVE_MEDIUM | (uint32_t)IOPORT_CFG_PERIPHERAL_PIN),
+            .pin = BSP_IO_PORT_P02_PIN_2, // RLIN30TX
+            .pin_cfg = ((uint32_t)IOPORT_ALT_OUT2 | (uint32_t)IOPORT_CFG_DRIVE_MEDIUM | (uint32_t)IOPORT_CFG_PERIPHERAL_PIN),
         },
         {
-            .pin = BSP_IO_PORT_P01_PIN_8, // RLIN30RX
-            .pin_cfg = ((uint32_t)IOPORT_ALT_IN8 | (uint32_t)IOPORT_CFG_PERIPHERAL_PIN),
+            //.pin = BSP_IO_PORT_P01_PIN_8, // RLIN30RX
+            //.pin_cfg = ((uint32_t)IOPORT_ALT_IN8 | (uint32_t)IOPORT_CFG_PERIPHERAL_PIN),
+		    .pin = BSP_IO_PORT_P02_PIN_3, // RLIN30RX
+		    .pin_cfg = ((uint32_t)IOPORT_ALT_IN6 | (uint32_t)IOPORT_CFG_PERIPHERAL_PIN),
+
         },
 };
 

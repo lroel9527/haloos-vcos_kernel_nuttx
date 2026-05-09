@@ -39,6 +39,7 @@
 #undef uint32
 #define uint32 uint32_t
 
+
 /****************************************************************************
  * Pre-processor Definitions
  ****************************************************************************/
@@ -114,7 +115,8 @@ static char g_uart0txbuffer[CONFIG_UART0_TXBUFSIZE];
 
 static struct up_dev_s g_uart0priv =
 	{
-		.uartbase = 0xFFC7C000, // LIN3/UART 0 base
+		//.uartbase = 0xFFC7C000, // LIN3/UART 0 base
+		.uartbase = 0xFF89B100, // LIN3/UART1 base
 };
 
 static __percpu_data uart_dev_t g_uart0port =
@@ -171,7 +173,7 @@ const rlin3_uart_extended_cfg_t g_uart0_cfg_extend =
 /** UART interface configuration */
 uart_cfg_t g_uart0_cfg =
 	{
-		.channel = 0,
+		.channel = 1,
 		.parity = UART_PARITY_OFF,
 		.stop_bits = UART_STOP_BITS_1,
 		.data_bits = UART_DATA_BITS_8,
@@ -183,9 +185,12 @@ uart_cfg_t g_uart0_cfg =
 		.rxi_ipl = (12),
 		.txi_ipl = (12),
 		.eri_ipl = (12),
-		.rxi_irq = VECTOR_NUMBER_INTRLIN30UR1,
-		.txi_irq = VECTOR_NUMBER_INTRLIN30UR0,
-		.eri_irq = VECTOR_NUMBER_INTRLIN30UR2};
+		//.rxi_irq = VECTOR_NUMBER_INTRLIN30UR1,     //LIN3/UART0
+		//.txi_irq = VECTOR_NUMBER_INTRLIN30UR0,
+		//.eri_irq = VECTOR_NUMBER_INTRLIN30UR2};
+		.rxi_irq = VECTOR_NUMBER_INTRLIN31UR1,      //LIN3/UART1
+		.txi_irq = VECTOR_NUMBER_INTRLIN31UR0,      //LIN3/UART1
+		.eri_irq = VECTOR_NUMBER_INTRLIN31UR2};     //LIN3/UART1
 
 rlin3_uart_instance_ctrl_t g_uart0_ctrl;
 
@@ -251,8 +256,10 @@ static int up_attach(struct uart_dev_s *dev)
 	(void)dev;
 
 #if !defined(CONFIG_RT_FRAMEWORK) || (CONFIG_RT_FRAMEWORK == 0)
-	irq_attach(622, (xcpt_t)up_rxiinterrupt, NULL);
-	up_enable_irq(622);
+	//irq_attach(622, (xcpt_t)up_rxiinterrupt, NULL);
+	//up_enable_irq(622);
+	irq_attach(627, (xcpt_t)up_rxiinterrupt, NULL);
+	up_enable_irq(627);
 #endif
 
 	return OK;
@@ -273,8 +280,10 @@ static void up_detach(struct uart_dev_s *dev)
 	(void)dev;
 
 #if !defined(CONFIG_RT_FRAMEWORK) || (CONFIG_RT_FRAMEWORK == 0)
-	up_disable_irq(622);
-	irq_detach(622);
+	//up_disable_irq(622);
+	//irq_detach(622);
+	up_disable_irq(627);
+	irq_detach(627);
 #endif
 }
 
