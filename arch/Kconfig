@@ -200,6 +200,12 @@ config ARCH_TRICORE
 	---help---
 		Infineon 32-bit AURIX TriCore architectures
 
+config ARCH_RH850
+	bool "Renesas RH850 Core"
+	select ARCH_HAVE_INTERRUPTSTACK
+	---help---
+		Renesas RH850 Core
+
 
 endchoice
 
@@ -222,6 +228,7 @@ config ARCH
 	default "or1k"    if ARCH_OR1K
 	default "sparc"   if ARCH_SPARC
 	default "tricore" if ARCH_TRICORE
+	default "rh850"   if ARCH_RH850
 
 source "arch/arm/Kconfig"
 source "arch/arm64/Kconfig"
@@ -240,6 +247,7 @@ source "arch/z80/Kconfig"
 source "arch/or1k/Kconfig"
 source "arch/sparc/Kconfig"
 source "arch/tricore/Kconfig"
+source "arch/rh850/Kconfig"
 
 config ARCH_CHIP_CUSTOM
 	bool "Custom Chip Support"

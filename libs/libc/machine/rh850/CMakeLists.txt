@@ -19,3 +19,11 @@
 # the License.
 #
 # ##############################################################################
+
+set(SRCS)
+
+if(CONFIG_ARCH_SETJMP_H)
+    list(APPEND SRCS ghs/arch_setjmp.850)
+endif()
+
+target_sources(c PRIVATE ${SRCS})
