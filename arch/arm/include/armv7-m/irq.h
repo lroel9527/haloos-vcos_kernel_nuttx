@@ -36,6 +36,9 @@
 #  include <nuttx/compiler.h>
 #  include <arch/armv7-m/nvicpri.h>
 #  include <stdint.h>
+#if defined(CONFIG_RT_FRAMEWORK) && (CONFIG_RT_FRAMEWORK == 1)
+#include <arch/armv7-m/atomic.h>
+#endif /* CONFIG_RT_FRAMEWORK */
 #endif
 
 /****************************************************************************
@@ -260,7 +263,14 @@ struct xcptcontext
  * such value for each processor that can receive an interrupt.
  */
 
+#ifdef CONFIG_BMP
+extern volatile uint32_t *g_current_regs[CONFIG_BMP_NCPUS];
+extern volatile uint32_t *g_interrupt_context[CONFIG_BMP_NCPUS];
+#else
 extern volatile uint32_t *g_current_regs[CONFIG_SMP_NCPUS];
+extern volatile uint32_t *g_interrupt_context[CONFIG_SMP_NCPUS];
+#endif
+
 
 /****************************************************************************
  * Inline functions
@@ -571,7 +581,7 @@ static inline_function uint32_t up_getsp(void)
 noinstrument_function
 static inline_function uint32_t *up_current_regs(void)
 {
-#ifdef CONFIG_SMP
+#if defined(CONFIG_SMP) || defined(CONFIG_BMP)
   return (uint32_t *)g_current_regs[up_cpu_index()];
 #else
   return (uint32_t *)g_current_regs[0];
@@ -581,7 +591,7 @@ static inline_function uint32_t *up_current_regs(void)
 noinstrument_function
 static inline_function void up_set_current_regs(uint32_t *regs)
 {
-#ifdef CONFIG_SMP
+#if defined(CONFIG_SMP) || defined(CONFIG_BMP)
   g_current_regs[up_cpu_index()] = regs;
 #else
   g_current_regs[0] = regs;
@@ -593,6 +603,71 @@ static inline_function bool up_interrupt_context(void)
 {
   return getipsr() != 0;
 }
+
+#if defined(CONFIG_RT_FRAMEWORK) && (CONFIG_RT_FRAMEWORK == 1)
+
+noinstrument_function static inline void up_set_contexthdl(void * const ctxhdl)
+{
+#if defined(CONFIG_SMP) || defined(CONFIG_BMP)
+  g_interrupt_context[up_cpu_index()] = ctxhdl;
+#else
+  g_interrupt_context[0] = ctxhdl;
+#endif
+}
+
+noinstrument_function static inline void * up_get_contexthdl(void)
+{
+#if defined(CONFIG_SMP) || defined(CONFIG_BMP)
+  irqstate_t flags = up_irq_save();
+  uint32_t * ret = g_interrupt_context[up_cpu_index()];
+  up_irq_restore(flags);
+  return (void *)ret;
+#else
+  return g_interrupt_context[0];
+#endif
+}
+
+static inline_function void up_set_irq_mask_level(irqlevel_t level)
+{
+  irqstate_t flags = up_irq_save();
+  setbasepri(level);
+  up_irq_restore(flags);
+}
+
+static inline_function irqlevel_t up_irq_level_save(irqlevel_t level)
+{
+  irqlevel_t pre_level = getbasepri();
+
+  if (level < pre_level) {
+    up_set_irq_mask_level(level);
+  }
+  return pre_level;
+}
+
+static inline_function void up_irq_level_restore(irqlevel_t level)
+{
+  up_set_irq_mask_level(level);
+}
+
+static inline_function irqlevel_t up_kernel_int_save(void)
+{
+#if defined(CONFIG_RT_FRAMEWORK_INT_LEVEL) && (CONFIG_RT_FRAMEWORK_INT_LEVEL == 1)
+  return up_irq_level_save(CONFIG_RT_FRAMEWORK_MAX_TP_INT_LEVEL);
+#else
+  return up_irq_save();
+#endif
+}
+
+static inline_function void up_kernel_int_restore(irqlevel_t level)
+{
+#if defined(CONFIG_RT_FRAMEWORK_INT_LEVEL) && (CONFIG_RT_FRAMEWORK_INT_LEVEL == 1)
+  return up_irq_level_restore(level);
+#else
+  return up_irq_restore(level);
+#endif
+}
+
+#endif /* CONFIG_RT_FRAMEWORK */
 
 /****************************************************************************
  * Public Function Prototypes
