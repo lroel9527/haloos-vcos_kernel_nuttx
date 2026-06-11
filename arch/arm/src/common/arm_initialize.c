@@ -40,7 +40,10 @@
 
 #if defined(CONFIG_ARCH_ARMV7M) || defined(CONFIG_ARCH_ARMV8M) || \
       defined(CONFIG_ARCH_ARMV6M) || defined(CONFIG_ARCH_ARM)
-volatile uint32_t *g_current_regs[CONFIG_SMP_NCPUS];
+volatile uint32_t *g_current_regs[CONFIG_NR_CPUS];
+#if defined(CONFIG_ARCH_CHIP_FC7300F8MDT)
+volatile uint32_t *g_interrupt_context[CONFIG_NR_CPUS];
+#endif
 #endif
 
 #if defined(CONFIG_RT_FRAMEWORK) && (CONFIG_RT_FRAMEWORK == 1)

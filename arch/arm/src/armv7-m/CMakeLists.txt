@@ -41,7 +41,8 @@ set(SRCS
     arm_trigger_irq.c
     arm_usagefault.c
     arm_vectors.c
-    arm_dbgmonitor.c)
+    arm_dbgmonitor.c
+    arm_atomic.c)
 
 if(CONFIG_ARMV7M_SYSTICK)
   list(APPEND SRCS arm_systick.c)
@@ -69,6 +70,10 @@ endif()
 
 if(CONFIG_ARM_COREDUMP_REGION)
   list(APPEND SRCS arm_dumpnvic.c)
+endif()
+
+if(CONFIG_SMP OR CONFIG_BMP)
+  list(APPEND SRCS arm_cpuidlestack.c)
 endif()
 
 target_sources(arch PRIVATE ${SRCS})
