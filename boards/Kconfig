@@ -139,6 +139,9 @@ config ARCH_BOARD_DK_TM4C129X
 		Tiva DK-TM4C129x Connected Development Kit featuring the
 		TM4C129XNCZAD MCU.
 
+config ARCH_BOARD_U2BX
+	bool "u2bx board"
+
 config ARCH_BOARD_EA3131
 	bool "Embedded Artists EA3131 Development board"
 	depends on ARCH_CHIP_LPC3131

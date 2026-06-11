@@ -549,7 +549,6 @@ static void idle_group_initialize(void)
  *   Does not return.
  *
  ****************************************************************************/
-
 void nx_start(void)
 {
   int i;
@@ -598,7 +597,6 @@ void nx_start(void)
       /* Get the user-mode heap from the platform specific code and configure
        * the user-mode memory allocator.
        */
-
       up_allocate_heap(&heap_start, &heap_size);
       kumm_initialize(heap_start, heap_size);
 #endif
@@ -607,7 +605,6 @@ void nx_start(void)
       /* Get the kernel-mode heap from the platform specific code and
        * configure the kernel-mode memory allocator.
        */
-
       up_allocate_kheap(&heap_start, &heap_size);
       kmm_initialize(heap_start, heap_size);
 #endif
@@ -617,7 +614,6 @@ void nx_start(void)
        * heap information from the platform-specific code and configure the
        * page allocator.
        */
-
       up_allocate_pgheap(&heap_start, &heap_size);
       mm_pginitialize(heap_start, heap_size);
 #endif
@@ -790,7 +786,6 @@ void nx_start(void)
   g_nx_initstate = OSINIT_OSREADY;
 
   /* Create initial tasks and bring-up the system */
-
   DEBUGVERIFY(nx_bringup());
 
   /* Enter to idleloop */
@@ -800,7 +795,9 @@ void nx_start(void)
   /* Let other threads have access to the memory manager */
 
   sched_trace_end();
+
   sched_unlock();
+
 
   /* The IDLE Loop **********************************************************/
 

@@ -191,9 +191,9 @@ _up_vector:
 #endif
   MOV.L   #_up_num_irq, R2
   MOV.W   [R2], R1
-  MVFC    ISP, R2   /* stack pointer as 2nd args of _renesas_doirq */
+  MVFC    ISP, R2  /* stack pointer as 2nd args of _renesas_doirq */
   BSR.A   _renesas_doirq /* remaining R1 register as 1st args of _renesas_doirq */
-  NOP
+  NOP 
   MVFC    ISP, R2
   CMP     R2, R1
   BEQ     .lint_contextswitch

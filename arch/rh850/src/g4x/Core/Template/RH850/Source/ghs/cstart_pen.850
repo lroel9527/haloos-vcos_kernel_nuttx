@@ -1,0 +1,285 @@
+/* {REA_DISCLAIMER_PLACEHOLDER} */
+
+-- //! [RH850-PEn-StartUp]
+
+------------------------------------------------------------------------------------------------------------------------
+--  Includes   <System Includes> , "Project Includes"
+------------------------------------------------------------------------------------------------------------------------
+    #include "memory_regions.h"
+
+------------------------------------------------------------------------------------------------------------------------
+--  Macro definitions (Define MACRO as 0 if it is not already)
+------------------------------------------------------------------------------------------------------------------------
+    BSP_WARM_START_RESET                .set 0
+    BSP_WARM_START_POST_CLOCK           .set 1
+    BSP_WARM_START_POST_C               .set 2
+
+    MEV_ADDR                            .set MEV_ADDRESS_START
+
+------------------------------------------------------------------------------------------------------------------------
+-------------- Public function delaration
+------------------------------------------------------------------------------------------------------------------------
+    .global  _cstart_pen
+
+    .extern _R_BSP_SpinlockGet
+    .extern _R_BSP_SpinLockRelease
+    .extern _exit
+    .extern __copy_data
+    .extern __clear_bss
+    .extern __Ram_Init
+    .extern _DummyIsr
+
+------------------------------------------------------------------------------------------------------------------------
+--  startup
+------------------------------------------------------------------------------------------------------------------------
+.section .text
+.align 2
+
+_cstart_pen:
+    mov     r0, r10                             -- initialize r10 to default value
+    /* Waiting CPU0 startup */
+    mov    MEV_ADDR, r6
+    jarl   _R_BSP_SpinlockGet, lp
+    mov    MEV_ADDR, r6
+    jarl   _R_BSP_SpinLockRelease, lp
+
+    /* This operation was performed on PE0 while running in SMP mode */
+#if (BSP_CONFIG_USE_SMP_MODE == 0)
+    jarl __Ram_Init, lp
+#elif (BSP_PE0_USED != 1)
+    mov    BSP_PE_USED, r11
+    sch1r  r11, r11
+    stsr   0, r10, 2                            -- get PEID.PEID
+    mov    1, r12
+    shl    r10, r12
+    cmp    r11, r12
+    bnz    .L1.Ram_Init_Skip
+    jarl   __Ram_Init, lp
+    /* Release lock for other cores */
+    mov    #__MEV_CPU_SYNC_ADDR, r6
+    jarl   _R_BSP_SpinLockRelease, lp
+
+.L1.Ram_Init_Skip:
+    /* Waiting CPUn Initial the common RAM */
+    mov    #__MEV_CPU_SYNC_ADDR, r6
+    jarl   _R_BSP_SpinlockGet, lp
+    mov    #__MEV_CPU_SYNC_ADDR, r6
+    jarl   _R_BSP_SpinLockRelease, lp
+#endif
+
+    /* Initialization of the gp, ep, tp pointer */
+    mov  __gp, gp                               --  set gp register
+    mov  __ep, ep                               --  set ep register
+    mov  __tp, tp                               --  set tp register
+
+    stsr    0, r10, 2                           -- get PEID.PEID
+#if (BSP_PE1_USED == 1)
+    cmp     1, r10
+    bz      _PE1_Initialization                 -- if PEID.PEID is 1
+#endif
+
+------------------------------------------------------------------------------------------------------------------------
+-- PEn Initialization
+------------------------------------------------------------------------------------------------------------------------
+#if (BSP_PE1_USED == 1)
+_PE1_Initialization:
+    /* Copy initialized RAM data from ROM to RAM */
+    /* Local RAM 1 */
+    mov  ___ghsbegin_pe1_data, r6
+    mov  ___ghsend_pe1_data, r7
+    mov  ___ghsbegin_ROM_pe1_data, r8
+    jarl  __copy_data, lp
+
+    /* Initialization of the stack pointer */
+    /* Zero out BSS for PE1 */
+    mov  ___ghsbegin_pe1_bss, r6
+    mov  ___ghsend_pe1_bss, r7
+    jarl  __clear_bss, lp
+
+    mov  ___ghsend_stack_pe1, sp                --  set sp register
+
+    /* Initialization of the interrupt base pointer */
+    mov   _IntVectors_PE1, r10
+    ldsr  r10, 4, 1                             -- INTBP
+    /* First set EBASE register address (set to "ex_entry_PE1" function) */
+    mov   _IntVectors_PE1, r10
+    br _skip
+#endif
+
+_skip:
+    /* Compute RINT and DV bits */
+
+    /* Extend Priority Interrupt */
+
+    /* Then set 1 to PSW.EBV -> RBASE!=EBASE */
+    stsr  5, r10, 0                             -- PSW
+    /* Then set 1 to PSW.CU0 and CU1 */
+    mov   0x8000, r11                           -- CUx_EBV
+    or    r11, r10
+    ldsr  r10, 5, 0                             -- PSW
+    synci
+
+    /* Perform MCU initialization */
+    jarl _SystemInit, lp
+    syncp
+
+    /* Enable interrupt */
+    -- ei
+
+    /* set various flags to PSW via FEPSW */
+    stsr  5, r10, 0                             -- r10 <- PSW
+    ldsr  r10, 3, 0                             -- FEPSW <- r10
+    mov   _exit, lp                             -- lp <- #_exit
+    /* Jump to main() */
+
+------------------------------------------------------------------------------------------------------------------------
+-- Jump to entry point of each PE main function
+------------------------------------------------------------------------------------------------------------------------
+
+    stsr    0, r10, 2                           -- get PEID.PEID
+#if (BSP_PE1_USED == 1)
+    cmp     1, r10
+    bz      _INIT_PE1                           -- if PEID.PEID is 1
+#endif
+
+_exit:
+    br  _exit                                   --  end of program
+
+_loop:
+    br    _loop
+
+#if (BSP_PE1_USED == 1)
+_INIT_PE1:
+    mov  _main_PE1, r10
+    ldsr  r10, 2, 0                             -- FEPC <- #_main
+    /* Apply PSW and PC to start user mode */
+    feret
+    br  _exit
+#endif
+
+------------------------------------------------------------------------------------------------------------------------
+--  Start Section for exception table (PE1)
+------------------------------------------------------------------------------------------------------------------------
+#if (BSP_PE1_USED == 1)
+.section ex_entry_PE1
+.global _ex_entry_PE1
+
+_ex_entry_PE1:
+------RESET
+    .offset 0x0000
+    jr _DummyIsr
+
+------SYSERR
+    .offset 0x0010
+    jr _DummyIsr
+
+------FETRAP
+    .offset 0x0030
+    jr _DummyIsr
+
+------TRAP0
+    .offset 0x0040
+    jr _DummyIsr
+
+------TRAP1
+    .offset 0x0050
+    jr _DummyIsr
+
+------RIEX
+    .offset 0x0060
+    jr _DummyIsr
+
+------UCPOP
+    .offset 0x0080
+    jr _DummyIsr
+
+------MIP_MDP
+    .offset 0x0090
+    jr _DummyIsr
+
+------PIE
+    .offset 0x00a0
+    jr _DummyIsr
+
+------MAE_MAEX
+    .offset 0x00c0
+    jr _DummyIsr
+
+------FENMI
+    .offset 0x00e0
+    jr _DummyIsr
+
+------FEINT
+    .offset 0x00f0
+    jr _DummyIsr
+
+------EIINTn priority_0
+    .offset 0x0100
+    jr _DummyIsr
+
+    /* Condition: Table reference method OFF and interrupt reduction OFF */
+------EIINTn priority_1
+    .offset 0x0110
+    jr _DummyIsr
+
+------EIINTn priority_2
+    .offset 0x0120
+    jr _DummyIsr
+
+------EIINTn priority_3
+    .offset 0x0130
+    jr _DummyIsr
+
+------EIINTn priority_4
+    .offset 0x0140
+    jr _DummyIsr
+
+------EIINTn priority_5
+    .offset 0x0150
+    jr _DummyIsr
+
+------EIINTn priority_6
+    .offset 0x0160
+    jr _DummyIsr
+
+------EIINTn priority_7
+    .offset 0x0170
+    jr _DummyIsr
+
+------EIINTn priority_8
+    .offset 0x0180
+    jr _DummyIsr
+
+------EIINTn priority_9
+    .offset 0x0190
+    jr _DummyIsr
+
+------EIINTn priority_10
+    .offset 0x01a0
+    jr _DummyIsr
+
+------EIINTn priority_11
+    .offset 0x01b0
+    jr _DummyIsr
+
+------EIINTn priority_12
+    .offset 0x01c0
+    jr _DummyIsr
+
+------EIINTn priority_13
+    .offset 0x01d0
+    jr _DummyIsr
+
+------EIINTn priority_14
+    .offset 0x01e0
+    jr _DummyIsr
+
+------EIINTn priority_15
+    .offset 0x01f0
+    jr _DummyIsr
+#endif
+----------------------------------------- End of exception table -------------------------------------------------------
+
+----------------------------------------- End of start up module -------------------------------------------------------
+
+-- //! [RH850-PEn-StartUp]

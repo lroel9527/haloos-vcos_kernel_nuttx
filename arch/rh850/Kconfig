@@ -1,0 +1,43 @@
+#
+# For a description of the syntax of this configuration file,
+# see the file kconfig-language.txt in the NuttX tools repository.
+#
+ 
+if ARCH_RH850
+ 
+choice
+	prompt "Renesas chip selection"
+	default RH850_TOOLCHAIN_GHS
+
+config RH850_TOOLCHAIN_GHS
+	bool "RH850s Compiler Green Hills Software toolchain"
+	select ARCH_TOOLCHAIN_GHS
+ 
+endchoice
+
+config ARCH_CHIP_U2B24E
+	bool "U2B24_E"
+	default y
+	select TIMER
+	select TIMER_ARCH
+	select ARCH_HAVE_SETJMP
+	---help---
+		Renesas U2B24-E
+ 
+config ARCH_RH850G4KH
+	bool
+	default n
+	
+config ARCH_RH850G4MH
+	bool
+	default n
+ 
+config ARCH_FAMILY
+	string
+	default "g4x"		if ARCH_RH850G4KH
+	default "g4x"		if ARCH_RH850G4MH
+ 
+source "arch/rh850/src/common/Kconfig"
+source "arch/rh850/src/g4x/Kconfig"
+ 
+endif # ARCH_RH850

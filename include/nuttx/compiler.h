@@ -1227,6 +1227,16 @@
 
 #endif
 
+#if defined(__ghs__)
+// #ifndef likely
+// #  define likely(x) (x)
+// #endif
+
+// #ifndef unlikely
+// #  define unlikely(x) (x)
+// #endif
+#endif
+
 #ifndef CONFIG_HAVE_LONG_LONG
 #  undef CONFIG_FS_LARGEFILE
 #endif

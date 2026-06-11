@@ -1,0 +1,481 @@
+/* {REA_DISCLAIMER_PLACEHOLDER} */
+
+-- //! [RH850-Boot-Up]
+
+------------------------------------------------------------------------------------------------------------------------
+--  Includes   <System Includes> , "Project Includes"
+------------------------------------------------------------------------------------------------------------------------
+    #include "memory_regions.h"
+
+------------------------------------------------------------------------------------------------------------------------
+--  Macro definitions (Define MACRO as 0 if it is not already)
+------------------------------------------------------------------------------------------------------------------------
+    /* Local RAM self */
+
+    /* Local RAM CPUn */
+#if !defined(LOCAL_RAM_CPU0_START)
+    LOCAL_RAM_CPU0_START                .set 0
+#endif
+#if !defined(LOCAL_RAM_CPU0_LENGTH)
+    LOCAL_RAM_CPU0_LENGTH               .set 0
+#endif
+#if !defined(LOCAL_RAM_CPU1_START)
+    LOCAL_RAM_CPU1_START                .set 0
+#endif
+#if !defined(LOCAL_RAM_CPU1_LENGTH)
+    LOCAL_RAM_CPU1_LENGTH               .set 0
+#endif
+
+    /* Cluster RAM */
+#if !defined(CLUSTER_RAM_0_START)
+    CLUSTER_RAM_0_START                 .set 0
+#endif
+#if !defined(CLUSTER_RAM_0_LENGTH)
+    CLUSTER_RAM_0_LENGTH                .set 0
+#endif
+
+    /* Retention RAM */
+
+    /* PEn_VTOR */
+#if !defined(PE1_VTOR)
+    PE1_VTOR                            .set 0
+#endif
+
+    MEV_ADDR                            .set MEV_ADDRESS_START
+
+-------------------------------------------------------------------------------------------------------------------------
+--------------- Public function delaration
+-------------------------------------------------------------------------------------------------------------------------
+    .global _Reset_Handler
+    .global _DummyIsr
+
+    .extern __cstart
+    .extern _cstart_pen
+    .extern _R_BSP_SpinlockGet
+    .extern _R_BSP_SpinLockRelease
+    .extern _DummyIsr
+
+-------------------------------------------------------------------------------------------------------------------------
+--  Exception vector table
+-------------------------------------------------------------------------------------------------------------------------
+.section "RESET", text
+.align  512
+
+_Reset_Handler:
+    jr    __start                               -- RESET
+
+    .align  16
+    syncp
+    jr    _DummyIsr                             -- SYSERR
+
+    .align  16
+    jr    _DummyIsr                             -- (R.F.U.)
+
+    .align  16
+    jr    _DummyIsr                             -- FETRAP
+
+    .align  16
+    jr    _TRAP0_Handler                        -- TRAP0
+
+    .align  16
+    jr    _DummyIsr                             -- TRAP1
+
+    .align  16
+    jr    _DummyIsr                             -- RIE
+
+    .align  16
+    syncp
+    jr    _DummyIsr                             -- FPP/FPI
+
+    .align  16
+    jr    _DummyIsr                             -- UCPOP
+
+    .align  16
+    jr    _DummyIsr                             -- MIP/MDP
+
+    .align  16
+    jr    _DummyIsr                             -- PIE
+
+    .align  16
+    jr    _DummyIsr                             -- (R.F.U.)
+
+    .align  16
+    jr    _DummyIsr                             -- MAE
+
+    .align  16
+    jr    _DummyIsr                             -- (R.F.U.)
+
+    .align  16
+    syncp
+    jr    _DummyIsr                             -- FENMI
+
+    .align  16
+    syncp
+    jr    _DummyIsr                             -- FEINT
+
+    .align  16
+    syncp
+    jr    _DummyIsr                             -- INTn(priority0)
+
+    /* Condition: Table reference method OFF and interrupt reduction OFF */
+    .align  16
+    syncp
+    jr    _DummyIsr                             -- INTn(priority1)
+
+    .align  16
+    syncp
+    jr    _DummyIsr                             -- INTn(priority2)
+
+    .align  16
+    syncp
+    jr    _DummyIsr                             -- INTn(priority3)
+
+    .align  16
+    syncp
+    jr    _DummyIsr                             -- INTn(priority4)
+
+    .align  16
+    syncp
+    jr    _DummyIsr                             -- INTn(priority5)
+
+    .align  16
+    syncp
+    jr    _DummyIsr                             -- INTn(priority6)
+
+    .align  16
+    syncp
+    jr    _DummyIsr                             -- INTn(priority7)
+
+    .align  16
+    syncp
+    jr    _DummyIsr                             -- INTn(priority8)
+
+    .align  16
+    syncp
+    jr    _DummyIsr                             -- INTn(priority9)
+
+    .align  16
+    syncp
+    jr    _DummyIsr                             -- INTn(priority10)
+
+    .align  16
+    syncp
+    jr    _DummyIsr                             -- INTn(priority11)
+
+    .align  16
+    syncp
+    jr    _DummyIsr                             -- INTn(priority12)
+
+    .align  16
+    syncp
+    jr    _DummyIsr                             -- INTn(priority13)
+
+    .align  16
+    syncp
+    jr    _DummyIsr                             -- INTn(priority14)
+
+    .align  16
+    syncp
+    jr    _DummyIsr                             -- INTn(priority15)
+
+.section  .text
+.align  2
+
+_DummyIsr:
+    br _DummyIsr
+
+------------------------------------------------------------------------------------------------------------------------
+--  Startup
+------------------------------------------------------------------------------------------------------------------------
+.section  .text
+.align  2
+__start:
+    mov     r0, r10                             -- initialize r10 register
+    stsr    0, r10, 2                           -- get PEID.PEID
+
+    #if (BSP_PE0_USED == 1)
+    cmp     0, r10
+    bz      __INITIALIZE_SETTING                -- if PEID.PEID is 0
+    #endif
+
+    #if (BSP_PE1_USED == 0)
+    cmp 1, r10
+    bz  .L.Reset_Handler_PE1
+    #endif
+
+#if (1)
+__INITIALIZE_SETTING:
+    /* General purpose register */
+    mov  r0, r1                                 -- r1 Assembler reserved register
+    mov  r0, r2                                 -- r2 Register for address and data variables
+    mov  r0, r3                                 -- r3 Stack pointer (SP)
+    mov  r0, r4                                 -- r4 Global pointer (GP)
+    mov  r0, r5                                 -- r5 Text pointer (TP)
+    mov  r0, r6                                 -- r6 to r29 Register for addresses and data variables
+    mov  r0, r7
+    mov  r0, r8
+    mov  r0, r9
+    mov  r0, r10
+    mov  r0, r11
+    mov  r0, r12
+    mov  r0, r13
+    mov  r0, r14
+    mov  r0, r15
+    mov  r0, r16
+    mov  r0, r17
+    mov  r0, r18
+    mov  r0, r19
+    mov  r0, r20
+    mov  r0, r21
+    mov  r0, r22
+    mov  r0, r23
+    mov  r0, r24
+    mov  r0, r25
+    mov  r0, r26
+    mov  r0, r27
+    mov  r0, r28
+    mov  r0, r29
+    mov  r0, r30                                -- r30 Element pointer (EP)
+    mov  r0, r31                                -- r31 Link pointer (LP)
+
+    /* Basic system register */
+    ldsr    r0,  0, 0                           -- SR0,0  EIPC
+    ldsr    r0,  2, 0                           -- SR2,0  FEPC
+    ldsr    r0, 16, 0                           -- SR16,0 CTPC
+    ldsr    r0, 28, 0                           -- SR28,0 EIWR
+    ldsr    r0, 29, 0                           -- SR29,0 FEWR
+    ldsr    r0,  3, 1                           -- SR3,1  EBASE
+    ldsr    r0,  4, 1                           -- SR4,1  INTBP
+    ldsr    r0,  6, 2                           -- SR6,2  MEA
+    ldsr    r0,  8, 2                           -- SR8,2  MEI
+    ldsr    r0, 18, 2                           -- SR18,2 RBIP
+
+    /* MPU function register */
+    ldsr    r0,  8, 5                           -- SR8,5  MCA
+    ldsr    r0,  9, 5                           -- SR9,5  MCS
+    ldsr    r0, 11, 5                           -- SR11,5 MCR
+
+    mov     r0, r12
+    /* Get total number of MPU's regions */
+    stsr    2, r13, 5
+    andi    31, r13, r13
+    addi    1, r13, r13
+_loop:                                          -- Initialize MPU Areas
+    ldsr    r12, 16, 5                          -- SR16,5 MPIDX
+    ldsr    r0, 20, 5                           -- SR20,5 MPLA
+    ldsr    r0, 21, 5                           -- SR21,5 MPUA
+    ldsr    r0, 22, 5                           -- SR22,5 MPAT
+    add     0x1, r12
+    cmp     r13, r12
+    bne     _loop
+
+    ldsr    r0, 24, 5                           -- SR24,5 MPID0
+    ldsr    r0, 25, 5                           -- SR25,5 MPID1
+    ldsr    r0, 26, 5                           -- SR26,5 MPID2
+    ldsr    r0, 27, 5                           -- SR27,5 MPID3
+    ldsr    r0, 28, 5                           -- SR28,5 MPID4
+    ldsr    r0, 29, 5                           -- SR29,5 MPID5
+    ldsr    r0, 30, 5                           -- SR30,5 MPID6
+    ldsr    r0, 31, 5                           -- SR31,5 MPID7
+    ldsr    r0, 12, 5                           -- SR12,5 MCI
+
+    /* Cache Operation Function Registers */
+    ldsr    r0, 16, 4                           -- SR16,4 ICTAGL
+    ldsr    r0, 17, 4                           -- SR17,4 ICTAGH
+    ldsr    r0, 18, 4                           -- SR18,4 ICDATL
+    ldsr    r0, 19, 4                           -- SR19,4 ICDATH
+    ldsr    r0, 28, 4                           -- SR28,4 ICERR
+
+    /* Virtualization support function system register */
+    ldsr    r0, 20, 1                           -- SR20,1 HVSB
+
+    /* Guest Context Register */
+    ldsr    r0,  0, 9                           -- SR0,9  GMEIPC
+    ldsr    r0,  2, 9                           -- SR2,9  GMFEPC
+    ldsr    r0, 19, 9                           -- SR19,9 GMEBASE
+    ldsr    r0, 20, 9                           -- SR20,9 GMINTBP
+    ldsr    r0, 28, 9                           -- SR28,9 GMEIWR
+    ldsr    r0, 29, 9                           -- SR29,9 GMFEWR
+    ldsr    r0,  6, 9                           -- SR6,9  GMMEA
+    ldsr    r0, 8, 9                            -- SR8,9 GMMEI
+#endif
+
+#if (BSP_PE0_USED == 1)
+    stsr    0, r10, 2                           -- get PEID.PEID
+    cmp     0, r10
+    bnz     .L1.entry_PEx
+_BOOTCTRL_SETTING_PE0:
+    ld.w    0xfffb2000[r0], r10                 -- get BOOTCTRL
+    mov     1, r11                              -- enabled PE0 by default, disable all other PEn
+    st.w    r11, 0xfffb2000[r0]                 -- set BOOTCTRL
+    mov     0x0, r2                             -- wait for 100us(0x9c40(40,000)count)
+    br     .L.start_PE0.1
+.L.start_PE0.0:
+    add     0x1, r2
+.L.start_PE0.1:
+    andi    0xffff, r2, tp
+    ori     0x9c40, r0, r6
+    cmp     r6, tp
+    blt    .L.start_PE0.0
+
+    /* Perform initialization of all configured memory regions on PE0 */
+    jarl  _hdwinit_PE0, lp                      -- initialize hardware
+
+    /* Multual Exclusive Control PE0 and PEn */
+    mov     MEV_ADDR, r6
+    st.w    r0, 0[r6]
+    jarl   _R_BSP_SpinlockGet, lp
+#if (BSP_PE1_BOOT == 1)
+    ld.w    0xfffb2000[r0], r10                 -- get BOOTCTRL
+    ori     2, r10, r11                         -- set 1 in BOOTCTRL.BC1 for enabled PE1
+    st.w    r11, 0xfffb2000[r0]                 -- set BOOTCTRL
+    mov     0x0, r2                             -- wait for 100us(0x9c40(40,000)count)
+    br     .L.start_PE1.1
+.L.start_PE1.0:
+    add     0x1, r2
+.L.start_PE1.1:
+    andi    0xffff, r2, tp
+    ori     0x9c40, r0, r6
+    cmp     r6, tp
+    blt    .L.start_PE1.0
+#endif
+#endif
+
+#if 1
+.L1.entry_PEx:
+
+#if ((BSP_CONFIG_USE_SMP_MODE == 1) && (BSP_PE0_USED != 1))
+    mov     BSP_PE_USED, r11
+    sch1r   r11, r11
+    stsr    0, r10, 2                           -- get PEID.PEID
+    mov     1, r12
+    shl     r10, r12
+    cmp     r11, r12
+    bnz    .L1.Mul_Setting_Skip
+
+    -- Multual Exclusive Control between PEn
+    mov     #__MEV_CPU_SYNC_ADDR, r6
+    st.w    r0, 0[r6]
+    jarl    _R_BSP_SpinlockGet, lp
+.L1.Mul_Setting_Skip:
+#endif
+
+    /* Jump to entry point of each PE */
+    stsr  0, r10, 2                             -- get PEID or HTCFG0
+    stsr  6, r11, 1                             -- get PID
+    shr  24, r11
+    cmp  6, r11
+    bnl  .L1
+    shr  16, r10                                -- get PEID (for G3)
+.L1:
+#if (BSP_PE0_USED == 1)
+    cmp  0, r10
+    bz  .L.entry_PE0
+#endif
+
+#if (BSP_PE1_USED == 1)
+    cmp  1, r10
+    bz  .L.entry_PE1
+#endif
+
+__exit:
+    br  __exit
+
+#if (BSP_PE0_USED == 1)
+.L.entry_PE0:
+    jr    __cstart
+#endif
+
+#if (BSP_PE1_USED == 1)
+.L.entry_PE1:
+    jarl  _hdwinit_PE1, lp                      -- initialize hardware
+    jr    _cstart_pen
+    br  __exit
+#else
+.L.Reset_Handler_PE1:
+    mov PE1_VTOR, r10
+    jmp [r10]
+#endif
+#endif
+
+------------------------------------------------------------------------------------------------------------------------
+-- hdwinit
+-- Specify RAM addresses suitable to your system if needed.
+------------------------------------------------------------------------------------------------------------------------
+  .align  2
+#if (BSP_PE0_USED == 1)
+_hdwinit_PE0:
+    mov  lp, r14                                -- save return address
+
+    /* Clear Local RAM Self */
+
+    /* Clear Local RAM CPU0 */
+#if (LOCAL_RAM_CPU0_LENGTH != 0)
+    mov  LOCAL_RAM_CPU0_START, r6
+    mov  LOCAL_RAM_CPU0_LENGTH, r7
+    add  r6, r7
+    jarl  _initRam, lp
+#endif
+
+    /* Clear Cluster RAM 0 */
+#if (CLUSTER_RAM_0_LENGTH != 0)
+    mov  CLUSTER_RAM_0_START, r6
+    mov  CLUSTER_RAM_0_LENGTH, r7
+    add  r6, r7
+    jarl  _initRam, lp
+#endif
+
+    /* Clear Cluster RAM 1 */
+        /* Clear Cluster RAM 0 */
+#if (CLUSTER_RAM_1_LENGTH != 0)
+    mov  CLUSTER_RAM_1_START, r6
+    mov  CLUSTER_RAM_1_LENGTH, r7
+    add  r6, r7
+    jarl  _initRam, lp
+#endif
+
+    /* Clear Cluster RAM 2 */
+
+    /* Clear Cluster RAM 3 */
+
+    /* Retention RAM */
+
+    mov  r14, lp                                -- load return address back
+    jmp  [lp]                                   -- jump to return address
+#endif
+
+    .align  2
+#if (BSP_PE1_USED == 1)
+_hdwinit_PE1:
+    mov  lp, r14                                -- save return address
+
+    /* Clear Local RAM PE1 */
+#if (LOCAL_RAM_CPU1_LENGTH != 0)
+    mov  LOCAL_RAM_CPU1_START, r6
+    mov  LOCAL_RAM_CPU1_LENGTH, r7
+    add  r6, r7
+    jarl  _initRam, lp
+#endif
+
+    mov  r14, lp                                -- load return address back
+    jmp  [lp]                                   -- jump to return address
+#endif
+
+-------------------------------------------------------------------------------------------------------------------------
+--  initRam
+------------------------------------------------------------------------------------------------------------------------
+  .align  2
+_initRam:
+    mov 0x00000000, r8
+    br  .L.initRam.2
+.L.initRam.1:
+    st.w  r8, 0[r6]
+    add  4, r6
+.L.initRam.2:
+    cmp  r6, r7
+    bh  .L.initRam.1
+    jmp  [lp]
+
+----------------------------------------------- End of start up module -------------------------------------------------
+
+-- //! [RH850-Boot-Up]
