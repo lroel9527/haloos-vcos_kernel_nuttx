@@ -53,6 +53,10 @@ ifeq ($(CONFIG_DRIVERS_NOTERPMSG),y)
   CSRCS += noterpmsg_driver.c
 endif
 
+ifeq ($(CONFIG_ARTI_ENABLED),y)
+  CSRCS += notearti_driver.c
+endif
+
 ifneq ($(CONFIG_DRIVERS_NOTERAM_SECTION),"")
   CFLAGS += ${DEFINE_PREFIX}DRIVERS_NOTERAM_SECTION=CONFIG_DRIVERS_NOTERAM_SECTION
 endif

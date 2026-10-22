@@ -152,7 +152,12 @@ static inline_function void arm_syscall_enter(struct tcb_s *tcb, uint32_t *regs)
 
     DEBUGASSERT((cmd != SYS_restore_context) && (cmd != SYS_switch_context));
   } else {
-    tcb->xcp.regs = regs;
+    /* Called by task, this tcp is equal to running task
+     * if not SYS_restore_context and not SYS_switch_context */
+
+    if((cmd == SYS_restore_context) || (cmd == SYS_switch_context)){
+      tcb->xcp.regs = regs;
+    }
   }
 }
 

@@ -27,6 +27,7 @@
 #include <nuttx/instrument.h>
 #include <nuttx/note/note_driver.h>
 #include <nuttx/note/noteram_driver.h>
+#include <nuttx/note/notearti_driver.h>
 #include <nuttx/note/noteddr_driver.h>
 #include <nuttx/note/handshake_driver.h>
 #include <nuttx/note/notectl_driver.h>
@@ -219,6 +220,16 @@ int note_initialize(void)
       serr("noterpmsg_init failed %d\n", ret);
       return ret;
     }
+#endif
+
+#if defined(CONFIG_ARTI_ENABLED) && (CONFIG_ARTI_ENABLED == 1)
+  ret = notearti_initialize();
+  if (ret < 0)
+    {
+      serr("notearti_initialize failed %d\n", ret);
+      return ret;
+    }
+
 #endif
 
   return ret;
