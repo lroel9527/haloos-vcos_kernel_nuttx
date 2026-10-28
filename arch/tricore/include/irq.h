@@ -1,3 +1,7 @@
+#include <nuttx/config.h>
+#ifdef CONFIG_ARCH_TC4XX
+#include <arch/tc4xx/irq_common.h>
+#else
 /****************************************************************************
  * arch/tricore/include/irq.h
  *
@@ -450,3 +454,5 @@ static inline_function bool up_interrupt_context(void)
 #endif
 
 #endif /* __ARCH_TRICORE_INCLUDE_IRQ_H */
+
+#endif /* CONFIG_ARCH_TC4XX */

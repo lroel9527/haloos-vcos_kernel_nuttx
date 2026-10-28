@@ -64,8 +64,11 @@ uintptr_t *tricore_alloc_csa(uintptr_t pc, uintptr_t sp,
 
   __isync();
 
-  memset(pucsa, 0, XCPTCONTEXT_SIZE);
-  memset(plcsa, 0, XCPTCONTEXT_SIZE);
+  /* Each hardware CSA is 16 words.  TC4xx XCPTCONTEXT_SIZE describes a
+   * lower+upper snapshot (128 bytes), not one CSA.  Clearing that size here
+   * corrupts the next free CSA, including contexts used by memset itself. */
+  memset(pucsa, 0, TC_CONTEXT_REGS * sizeof(uintptr_t));
+  memset(plcsa, 0, TC_CONTEXT_REGS * sizeof(uintptr_t));
 
   pucsa[REG_SP]  = sp;
   pucsa[REG_PSW] = psw;

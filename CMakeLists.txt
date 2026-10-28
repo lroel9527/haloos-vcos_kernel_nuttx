@@ -607,8 +607,16 @@ if(NOT CONFIG_ARCH_SIM)
   get_filename_component(LD_SCRIPT_NAME ${ldscript} NAME)
   set(LD_SCRIPT_TMP "${CMAKE_BINARY_DIR}/${LD_SCRIPT_NAME}.tmp")
 
+  set(ldscript_dependencies)
+  if(CONFIG_ARCH_CHIP_CUSTOM_TC499N AND CONFIG_RT_FRAMEWORK)
+    file(GLOB ldscript_dependencies CONFIGURE_DEPENDS "${GENDATA_DIR}/scripts/*.ld")
+    list(APPEND ldscript_dependencies "${CMAKE_BINARY_DIR}/include/nuttx/config.h")
+  endif()
   nuttx_generate_preproces_target(SOURCE_FILE ${ldscript} TARGET_FILE
-                                  ${LD_SCRIPT_TMP})
+                                  ${LD_SCRIPT_TMP} DEPENDS ${ldscript_dependencies})
+  if(CONFIG_ARCH_CHIP_CUSTOM_TC499N)
+    set_property(TARGET nuttx APPEND PROPERTY LINK_DEPENDS ${LD_SCRIPT_TMP})
+  endif()
 
   add_custom_target(ldscript_tmp DEPENDS ${LD_SCRIPT_TMP})
   add_dependencies(nuttx ldscript_tmp)

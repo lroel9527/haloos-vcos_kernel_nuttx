@@ -74,14 +74,24 @@ void up_initial_state(struct tcb_s *tcb)
 
   if (tcb->pid == IDLE_PROCESS_ID)
     {
-      uintptr_t idle_stack[] =
+      uintptr_t idle_stack[CONFIG_NR_CPUS] =
         {
           (uintptr_t)g_idle_topstack,
+#if CONFIG_NR_CPUS > 1
           (uintptr_t)g_idle1_topstack,
+#endif
+#if CONFIG_NR_CPUS > 2
           (uintptr_t)g_idle2_topstack,
+#endif
+#if CONFIG_NR_CPUS > 3
           (uintptr_t)g_idle3_topstack,
+#endif
+#if CONFIG_NR_CPUS > 4
           (uintptr_t)g_idle4_topstack,
+#endif
+#if CONFIG_NR_CPUS > 5
           (uintptr_t)g_idle5_topstack,
+#endif
         };
 
       tcb->stack_alloc_ptr = (void *)(idle_stack[up_cpu_index()] -

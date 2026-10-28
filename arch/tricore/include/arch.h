@@ -56,6 +56,11 @@ extern "C"
 #define EXTERN extern
 #endif
 
+#if defined(CONFIG_ARCH_TC4XX) && !defined(__ASSEMBLY__)
+#include <sys/types.h>
+EXTERN uint32_t up_timer_freq(void);
+EXTERN int up_timer_value(FAR clock_t *ticks);
+#endif
 #undef EXTERN
 #ifdef __cplusplus
 }
