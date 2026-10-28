@@ -12,6 +12,7 @@ menu "TC4XX Peripheral Support"
 config TC4XX_UART0
 	bool "TC4XX UART0"
 	default y
+	depends on TRICORE_UART0
 	select UART0_SERIALDRIVER
 	select ARCH_HAVE_SERIAL_TERMIOS
 

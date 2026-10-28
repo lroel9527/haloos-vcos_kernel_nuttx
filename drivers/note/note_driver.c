@@ -37,6 +37,7 @@
 #include <nuttx/clock.h>
 #include <nuttx/note/note_driver.h>
 #include <nuttx/note/noteram_driver.h>
+#include <nuttx/note/notearti_driver.h>
 #include <nuttx/note/notelog_driver.h>
 #include <nuttx/note/notestream_driver.h>
 #include <nuttx/spinlock.h>
@@ -49,10 +50,14 @@
  * Pre-processor Definitions
  ****************************************************************************/
 
-#if defined(CONFIG_DRIVERS_NOTERAM) +  defined(CONFIG_DRIVERS_NOTELOG) + \
-    defined(CONFIG_DRIVERS_NOTESNAP) + defined(CONFIG_DRIVERS_NOTERTT) + \
-    defined(CONFIG_SEGGER_SYSVIEW) > CONFIG_DRIVERS_NOTE_MAX
-#  error "Maximum channel number exceeds. "
+#if defined(CONFIG_DRIVERS_NOTERAM) + defined(CONFIG_DRIVERS_NOTEDDR) + \
+    defined(CONFIG_DRIVERS_NOTEFILE) + defined(CONFIG_DRIVERS_NOTELOG) + \
+    defined(CONFIG_DRIVERS_NOTESNAP) + defined(CONFIG_DRIVERS_NOTELOWEROUT) + \
+    defined(CONFIG_DRIVERS_NOTERPMSG) + defined(CONFIG_NOTE_RTT) + \
+    defined(CONFIG_SEGGER_SYSVIEW) + \
+    (defined(CONFIG_ARTI_ENABLED) && CONFIG_ARTI_ENABLED == 1) > \
+    CONFIG_DRIVERS_NOTE_MAX
+#  error "Configured sched_note drivers exceed CONFIG_DRIVERS_NOTE_MAX"
 #endif
 
 #define note_add(drv, note, notelen)                                         \
@@ -65,8 +70,8 @@
   ((drv)->ops->suspend && ((drv)->ops->suspend(drv, tcb), true))
 #define note_resume(drv, tcb)                                                \
   ((drv)->ops->resume && ((drv)->ops->resume(drv, tcb), true))
-#define note_wakeup(drv, tcb)                                                \
-  ((drv)->ops->wakeup && ((drv)->ops->wakeup(drv, tcb), true))
+#define note_wakeup(drv, tcb, pid)                                                \
+  ((drv)->ops->wakeup && ((drv)->ops->wakeup(drv, tcb, pid), true))
 #define note_cpu_start(drv, tcb, cpu)                                        \
   ((drv)->ops->cpu_start && ((drv)->ops->cpu_start(drv, tcb, cpu), true))
 #define note_cpu_started(drv, tcb)                                           \
@@ -163,6 +168,9 @@ FAR static __percpu_data struct note_driver_s *
 #endif
 #ifdef CONFIG_DRIVERS_NOTERPMSG
   (FAR struct note_driver_s *)&g_noterpmsg_driver,
+#endif
+#if defined(CONFIG_ARTI_ENABLED) && (CONFIG_ARTI_ENABLED == 1)
+  (FAR struct note_driver_s *)&g_notearti_driver,
 #endif
   NULL
 };
@@ -1077,7 +1085,7 @@ void sched_note_wakeup(FAR struct tcb_s *tcb, pid_t wakeup_id)
           continue;
         }
 
-      if (note_wakeup(*driver, tcb))
+      if (note_wakeup(*driver, tcb, wakeup_id))
         {
           continue;
         }

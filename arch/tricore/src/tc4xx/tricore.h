@@ -24,12 +24,8 @@
 /****************************************************************************
  * Included Files
  ****************************************************************************/
-#include "IfxWtu.h"
 
-static inline void tricore_disable_watchdog(void)
-{
-    IfxWtu_disableCpuWatchdog(IfxWtu_getCpuWatchdogPassword());
-    IfxWtu_disableSystemWatchdog(IfxWtu_getSystemWatchdogPassword());
-}
+struct oneshot_lowerhalf_s *tc4xx_systimer_initialize(void);
+const struct hrtimer_ops_s *tc4xx_hrtimer_initialize(void);
 
 #endif /* __ARCH_TRICORE_SRC_TC4XX_TRICORE_CHIP_H */

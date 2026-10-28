@@ -23,15 +23,11 @@
 set(CMAKE_SYSTEM_NAME Generic)
 set(CMAKE_SYSTEM_VERSION 1)
 
-set(ARCH_SUBDIR)
-
-if(CONFIG_ARCH_TC3XX) # TC3XX
-  set(ARCH_SUBDIR tc3xx)
-else()
-  set(ARCH_SUBDIR tc3xx)
+if(NOT ARCH_SUBDIR)
+  message(FATAL_ERROR "Select a supported TriCore family before the GNU toolchain")
 endif()
+include(${CMAKE_CURRENT_LIST_DIR}/${ARCH_SUBDIR}.cmake)
 
-include(${ARCH_SUBDIR})
 if(NOT DEFINED TOOLCHAIN_PREFIX)
     set(TOOLCHAIN_PREFIX "tricore-elf")
 endif()

@@ -55,7 +55,7 @@ struct note_driver_ops_s
   CODE void (*resume)(FAR struct note_driver_s *drv, FAR struct tcb_s *tcb);
 #endif
 #ifdef CONFIG_SCHED_INSTRUMENTATION_WAKEUP
-  CODE void (*wakeup)(FAR struct note_driver_s *drv, FAR struct tcb_s *tcb);
+  CODE void (*wakeup)(FAR struct note_driver_s *drv, FAR struct tcb_s *tcb, pid_t wakeup_id);
 #endif
 #ifdef CONFIG_SMP
   CODE void (*cpu_start)(FAR struct note_driver_s *drv,

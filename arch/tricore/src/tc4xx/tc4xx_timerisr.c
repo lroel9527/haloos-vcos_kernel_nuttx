@@ -18,46 +18,19 @@
  *
  ****************************************************************************/
 
-/****************************************************************************
- * Included Files
- ****************************************************************************/
-
 #include <nuttx/irq.h>
 #include <nuttx/kmalloc.h>
-
+#include <nuttx/hrtimer.h>
 #include <nuttx/timers/oneshot.h>
 #include <nuttx/timers/arch_alarm.h>
 
-#include "tricore_internal.h"
-
-#include "IfxStm.h"
-
-/****************************************************************************
- * Pre-processor Definitions
- ****************************************************************************/
-
-#define SCU_FREQUENCY 400000000UL
-
-/****************************************************************************
- * Public Functions
- ****************************************************************************/
-
-/****************************************************************************
- * Name: up_timer_initialize
- *
- * Description:
- *   This function is called during start-up to initialize
- *   the timer interrupt.
- *
- ****************************************************************************/
+#include "tricore.h"
 
 void up_timer_initialize(void)
 {
-  struct oneshot_lowerhalf_s *lower;
-
-  lower = tricore_systimer_initialize(&MODULE_CPU0, 10, SCU_FREQUENCY);
-
-  DEBUGASSERT(lower != NULL);
-
-  up_alarm_set_lowerhalf(lower);
+#if defined(CONFIG_RT_FRAMEWORK) && (CONFIG_RT_FRAMEWORK == 1)
+	up_hrtimer_set_ops(tc4xx_hrtimer_initialize());
+#elif defined(CONFIG_ONESHOT)
+	up_alarm_set_lowerhalf(tc4xx_systimer_initialize());
+#endif /* CONFIG_ONESHOT */
 }

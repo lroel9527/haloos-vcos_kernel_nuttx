@@ -30,6 +30,7 @@
  ****************************************************************************/
 
 #include <nuttx/config.h>
+#include <IfxCpu_Intrinsics.h>
 
 /****************************************************************************
  * Pre-processor Prototypes
@@ -80,33 +81,15 @@
 #define REG_LPC          REG_LA11
 
 #define TC_CONTEXT_REGS  (16)
+#define TC_CONTEXT_SIZE  (sizeof(void *) * TC_CONTEXT_REGS)
 
-#define XCPTCONTEXT_REGS (TC_CONTEXT_REGS)
-#define XCPTCONTEXT_SIZE (sizeof(void *) * TC_CONTEXT_REGS)
+#define XCPTCONTEXT_REGS (TC_CONTEXT_REGS * 2)
+#define XCPTCONTEXT_SIZE (sizeof(void *) * XCPTCONTEXT_REGS)
 
-#define NR_IRQS          (255)
-
-/* PSW: Program Status Word Register */
-
-#define PSW_CDE         (1 << 7) /* Bits 7: Call Depth Count Enable */
-#define PSW_IS          (1 << 9) /* Bits 9: Interrupt Stack Control */
-#define PSW_IO          (10)     /* Bits 10-11: Access Privilege Level Control (I/O Privilege) */
-#  define PSW_IO_USER0      (0 << PSW_IO)
-#  define PSW_IO_USER1      (1 << PSW_IO)
-#  define PSW_IO_SUPERVISOR (2 << PSW_IO)
-
-/* PCXI: Previous Context Information and Pointer Register */
-
-#define PCXI_UL         (1 << 20) /* Bits 20: Upper or Lower Context Tag */
-#define PCXI_PIE        (1 << 21) /* Bits 21: Previous Interrupt Enable */
-
-/* FCX: Free CSA List Head Pointer Register */
-
-#define FCX_FCXO        (0)       /* Bits 0-15: FCX Offset Address */
-#define FCX_FCXS        (16)      /* Bits 16-19: FCX Segment Address */
-#define FCX_FCXO_MASK   (0xffff << FCX_FCXO)
-#define FCX_FCXS_MASK   (0xf    << FCX_FCXS)
-#define FCX_FREE        (FCX_FCXS_MASK | FCX_FCXO_MASK) /* Free CSA manipulation */
+#ifdef CONFIG_RT_FRAMEWORK
+#include <arch/tc4xx/atomic.h>
+#include <arch/tc4xx/mpu.h>
+#endif /* CONFIG_RT_FRAMEWORK */
 
 /****************************************************************************
  * Public Types
@@ -115,12 +98,6 @@
 #ifndef __ASSEMBLY__
 struct xcptcontext
 {
-  /* The following function pointer is non-zero if there are pending signals
-   * to be processed.
-   */
-
-  void *sigdeliver; /* Actual type is sig_deliver_t */
-
   /* These are saved copies of the context used during
    * signal processing.
    */
@@ -135,6 +112,119 @@ struct xcptcontext
 
   uintptr_t *regs;
 };
+
+#ifdef CONFIG_RT_FRAMEWORK_SYSCALL
+bool up_is_privilege_mode(void);
+uint8_t up_get_mpu_set(void);
+
+/* called directly */
+
+static inline_function void up_set_privilege_to_user(void)
+{
+	uintptr_t psw;
+
+	psw = (uintptr_t)__mfcr(TRICORE_CPU_PSW);
+	psw &= ~(PSW_IO_USER0 | PSW_IO_USER1 | PSW_IO_SUPERVISOR);
+	psw |= PSW_IO_USER0;
+	__mtcr(TRICORE_CPU_PSW, psw);
+	__isync();
+}
+
+/*called by trap*/
+
+static inline_function void up_syscall_set_enter_int_state(uint32_t *regs)
+{
+	uintptr_t icr;
+	uintptr_t pcxi;
+	uintptr_t *plcsa, *pucsa;
+
+	__dsync();
+
+	plcsa = CSA_TO_ADDR(regs[REG_UPCXI]);
+	pcxi = plcsa[REG_LPCXI];
+	pucsa = CSA_TO_ADDR(pcxi);
+
+#ifdef CONFIG_TRICORE_TOOLCHAIN_TASKING
+	__asm volatile("mov.a  a10, %0" ::"d"(pucsa[REG_A10]) : "a10");
+#else
+	__setareg(a10, pucsa[REG_A10]);
+#endif
+	icr = (uintptr_t)__mfcr(TRICORE_CPU_ICR);
+
+#ifdef CONFIG_RT_FRAMEWORK_INT_LEVEL
+	icr &= (~ICR_CCPN_MASK);
+	icr |= ((pcxi & PCXI_PCPN_MASK) >> PCXI_PCPN_BIT);
+#endif
+	icr &= (~ICR_IE_MASK);
+	icr |= ((pcxi & PCXI_PIE_MASK) >> PCXI_PIE_BIT << ICR_IE);
+
+	__mtcr(TRICORE_CPU_ICR, icr);
+	__isync();
+}
+
+static inline_function void up_syscall_set_exit_int_state(uint32_t *regs)
+{
+
+}
+
+static inline_function bool up_syscall_get_prev_privilege(uint32_t *regs)
+{
+	uintptr_t *plcsa;
+	uintptr_t *pucsa;
+
+	plcsa = CSA_TO_ADDR(regs[REG_UPCXI]);
+
+	__dsync();
+
+	pucsa = CSA_TO_ADDR(plcsa[REG_LPCXI]);
+
+	return ((pucsa[REG_PSW] & PSW_IO_SUPERVISOR) != 0) ? true : false;
+}
+
+static inline_function void up_syscall_set_prev_privilege(uint32_t *regs, const bool is_privilege)
+{
+	uintptr_t *plcsa;
+	uintptr_t *pucsa;
+
+	plcsa = CSA_TO_ADDR(regs[REG_UPCXI]);
+
+	__dsync();
+
+	pucsa = CSA_TO_ADDR(plcsa[REG_LPCXI]);
+
+	pucsa[REG_PSW] &= ~(PSW_IO_USER0 | PSW_IO_USER1 | PSW_IO_SUPERVISOR);
+	pucsa[REG_PSW] |= (is_privilege == true) ? PSW_IO_SUPERVISOR : PSW_IO_USER0;
+
+}
+
+static inline_function void up_syscall_set_prev_int_state(uint32_t *regs)
+{
+	uintptr_t icr;
+	uintptr_t icr_ie;
+	uintptr_t pcxi;
+	uintptr_t *plcsa;
+
+	icr = (uintptr_t)__mfcr(TRICORE_CPU_ICR);
+	plcsa = CSA_TO_ADDR(regs[REG_UPCXI]);
+
+	__dsync();
+
+	pcxi = plcsa[REG_LPCXI];
+
+	pcxi &= ~PCXI_PIE_MASK;
+	icr_ie = (icr & ICR_IE_MASK) >> ICR_IE;
+	pcxi |= icr_ie << PCXI_PIE_BIT;
+
+#ifdef CONFIG_RT_FRAMEWORK_INT_LEVEL
+	pcxi &= ~PCXI_PCPN_MASK;
+	pcxi |= ((icr & ICR_CCPN_MASK) >> ICR_CCPN) << PCXI_PCPN_BIT;
+#endif
+
+	plcsa[REG_LPCXI] = pcxi;
+}
+
+#endif /* CONFIG_RT_FRAMEWORK_SYSCALL */
+
 #endif /* __ASSEMBLY__ */
 
 #endif /* __ARCH_TRICORE_INCLUDE_TC3XX_IRQ_H */

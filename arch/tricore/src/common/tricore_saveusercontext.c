@@ -45,6 +45,8 @@
 int up_saveusercontext(void *saveregs)
 {
   uintptr_t *regs = tricore_csa2addr(__mfcr(TC3XX_CPU_PCXI));
-  memcpy(saveregs, regs, XCPTCONTEXT_SIZE);
+  /* This legacy API saves one upper CSA; the linked lower CSA is not
+   * guaranteed to be adjacent to it. */
+  memcpy(saveregs, regs, TC_CONTEXT_REGS * sizeof(uintptr_t));
   return 0;
 }

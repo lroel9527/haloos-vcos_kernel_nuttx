@@ -12,6 +12,7 @@ if DRIVERS_NOTE
 
 config DRIVERS_NOTE_MAX
 	int "Maximum number of sched_note drivers"
+	default 2 if ARTI_ENABLED
 	default 1
 	---help---
 		sched_note supports the maximum number of drivers
